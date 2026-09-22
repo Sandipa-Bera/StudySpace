@@ -4,15 +4,13 @@ import { useAuth } from '../hooks/useAuth';
 import { subjectsService } from '../services/subjects.service';
 import { chaptersService } from '../services/chapters.service';
 import { topicsService } from '../services/topics.service';
-import { getUserActivity } from '../services/activity.service';
-import { formatActivity } from '../utils/activity';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { LoadingState } from '../components/ui/LoadingState';
 import { EmptyState } from '../components/ui/EmptyState';
 import { getGreeting } from '../utils/greeting';
 import { calcProgress } from '../utils/progress';
-import { BookOpen, CheckCircle, Clock, Star, Calendar } from 'lucide-react';
-import type { Subject, Chapter, Topic, ActivityLog } from '../types';
+import { BookOpen, CheckCircle, Clock, Calendar } from 'lucide-react';
+import type { Subject, Chapter, Topic } from '../types';
 
 interface SubjectData {
   subject: Subject;
@@ -25,11 +23,9 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<SubjectData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState<Topic[]>([]);
   const [dueSoon, setDueSoon] = useState<Topic[]>([]);
-  const [needRevision, setNeedRevision] = useState<Topic[]>([]);
+  const [needRevisionList, setNeedRevisionList] = useState<Topic[]>([]);
   const [todayStudy, setTodayStudy] = useState<Topic[]>([]);
-  const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
 
   const displayName =
     (user as { user_metadata?: { display_name?: string } } | null)?.user_metadata?.display_name ||
@@ -47,11 +43,9 @@ export function DashboardPage() {
     try {
       const subjects = await subjectsService.getAll(user.id);
 
-      const [favs, due, revision, activities] = await Promise.all([
-        topicsService.getFavorites().catch(() => []),
+      const [due, revision] = await Promise.all([
         topicsService.getTopicsDueSoon(7).catch(() => []),
         topicsService.getTopicsNeedingRevision().catch(() => []),
-        getUserActivity(user.id, 10).catch(() => []),
       ]);
 
       const allData: SubjectData[] = await Promise.all(
@@ -71,10 +65,8 @@ export function DashboardPage() {
       );
 
       setData(allData);
-      setFavorites(favs);
       setDueSoon(due);
-      setNeedRevision(revision);
-      setRecentActivity(activities);
+      setNeedRevisionList(revision);
 
       // Filter topics due today
       setTodayStudy([]);
@@ -90,10 +82,11 @@ export function DashboardPage() {
   const completedTopics = data.reduce((sum, d) => sum + d.topics.filter((t) => t.is_completed).length, 0);
   const overallPct = calcProgress(completedTopics, totalTopics);
 
-  // Understanding stats - fields don't exist in database yet
-  const understoodCount = 0;
-  const needRevisionCount = 0;
-  const dontUnderstandCount = 0;
+  // Understanding stats
+  const allTopics = data.flatMap(d => d.topics);
+  const understoodCount = allTopics.filter(t => t.understanding_status === 'understood').length;
+  const needRevisionCount = allTopics.filter(t => t.understanding_status === 'need_revision').length;
+  const dontUnderstandCount = allTopics.filter(t => t.understanding_status === 'dont_understand').length;
 
   // Continue studying — find chapters with some but not full completion
   const continueItems = data
@@ -160,19 +153,10 @@ export function DashboardPage() {
               <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
                 <Clock size={20} style={{ color: '#DAA520', marginBottom: '0.5rem' }} />
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--choco)', fontFamily: 'Lora, serif' }}>
-                  {needRevision.length}
+                  {needRevisionList.length}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                   Need Revision
-                </div>
-              </div>
-              <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
-                <Star size={20} style={{ color: 'var(--dusty)', marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--choco)', fontFamily: 'Lora, serif' }}>
-                  {favorites.length}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Favorites
                 </div>
               </div>
               <div className="card" style={{ padding: '1rem', textAlign: 'center' }}>
@@ -396,40 +380,7 @@ export function DashboardPage() {
             </section>
           )}
 
-          {/* Recent Activity */}
-          {recentActivity.length > 0 && (
-            <section style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{ fontSize: '1rem', fontFamily: 'Inter, sans-serif', fontWeight: 600, color: 'var(--choco)', marginBottom: '0.875rem' }}>
-                Recent Activity
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {recentActivity.slice(0, 5).map((activity) => {
-                  const { icon, description } = formatActivity(activity);
-                  return (
-                    <div
-                      key={activity.id}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        borderRadius: '8px',
-                        background: 'var(--sand)',
-                        fontSize: '0.85rem',
-                        color: 'var(--text-muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      <span style={{ color: 'var(--primary)', flexShrink: 0 }}>{icon}</span>
-                      <span style={{ flex: 1, minWidth: 0 }}>{description}</span>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-light)', flexShrink: 0 }}>
-                        {new Date(activity.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+
         </>
       )}
     </div>

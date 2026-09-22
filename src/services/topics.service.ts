@@ -126,14 +126,20 @@ export const topicsService = {
     return data;
   },
 
-  async toggleFavorite(id: string, _isFavorite: boolean, _userId?: string): Promise<Topic> {
-    // is_favorite field doesn't exist in database yet, skip this
-    return topicsService.getById(id) as Promise<Topic>;
-  },
+  async updateUnderstandingStatus(id: string, status: 'understood' | 'need_revision' | 'dont_understand' | 'none' | null, userId?: string): Promise<Topic> {
+    const { data, error } = await supabase
+      .from('topics')
+      .update({ understanding_status: status })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
 
-  async updateUnderstandingStatus(id: string, _status: 'understood' | 'need_revision' | 'dont_understand' | null, _userId?: string): Promise<Topic> {
-    // understanding_status field doesn't exist in database yet, skip this
-    return topicsService.getById(id) as Promise<Topic>;
+    if (userId && status && status !== 'none') {
+      await logActivity(userId, `topic_marked_${status}`, 'topic', id, { name: data.name });
+    }
+
+    return data;
   },
 
   async updateRevisionStatus(id: string, _status: 'none' | 'needs_revision' | 'revised' | null, _userId?: string): Promise<Topic> {
@@ -146,10 +152,7 @@ export const topicsService = {
     return topicsService.getById(id) as Promise<Topic>;
   },
 
-  async getFavorites(): Promise<Topic[]> {
-    // is_favorite field doesn't exist in database yet, return empty array
-    return [];
-  },
+
 
   async getTopicsNeedingRevision(): Promise<Topic[]> {
     // revision_status field doesn't exist in database yet, return empty array

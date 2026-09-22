@@ -6,9 +6,6 @@ const NAV_ITEMS = [
   { to: '/subjects', label: 'Subjects', icon: BookOpen },
   { to: '/journal', label: 'Journal', icon: BookMarked },
   { to: '/search', label: 'Search', icon: Search },
-  { to: '/favorites', label: 'Favorites', icon: Star },
-  { to: '/scratchpad', label: 'Scratchpad', icon: Sparkles },
-  { to: '/activity', label: 'Activity', icon: Clock },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
