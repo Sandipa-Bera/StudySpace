@@ -16,6 +16,7 @@ import { FavoritesPage } from './pages/FavoritesPage';
 import { ScratchpadPage } from './pages/ScratchpadPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PandoraTimerPage } from './pages/PandoraTimerPage';
 import { LoadingState } from './components/ui/LoadingState';
 
 // ─── Protected Route ───────────────────────────────────────
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
       <Route path="/scratchpad" element={<ProtectedRoute><ScratchpadPage /></ProtectedRoute>} />
       <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
+      <Route path="/pandora-timer" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
       {/* Fallback */}
