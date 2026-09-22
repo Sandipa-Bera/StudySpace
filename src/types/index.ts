@@ -36,6 +36,7 @@ export interface Topic {
   name: string;
   description: string | null;
   is_completed: boolean;
+  understanding_status?: 'understood' | 'need_revision' | 'dont_understand' | 'none' | null;
   order_index: number;
   created_at: string;
   updated_at: string;

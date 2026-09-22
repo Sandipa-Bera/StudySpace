@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Pencil, Eye, EyeOff, Trash2, Clock, Upload, Play, Pause, FileText, Download } from 'lucide-react';
+import { Check, Pencil, Eye, EyeOff, Trash2, Clock, Upload, Play, Pause, FileText, Download, Brain, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useToast } from '../hooks/useToast';
@@ -110,6 +110,17 @@ export function TopicDetailPage() {
       showToast(updated.is_completed ? 'Topic completed!' : 'Topic marked as incomplete');
     } catch {
       showToast('Failed to update completion status', 'error');
+    }
+  };
+
+  const handleUnderstandingStatus = async (status: 'understood' | 'need_revision' | 'dont_understand' | 'none') => {
+    if (!topic) return;
+    try {
+      const updated = await topicsService.updateUnderstandingStatus(topic.id, status, user?.id);
+      setTopic(updated);
+      showToast('Understanding status updated');
+    } catch {
+      showToast('Failed to update understanding status', 'error');
     }
   };
 
@@ -263,6 +274,48 @@ export function TopicDetailPage() {
             )}
           </button>
         </div>
+      </div>
+      
+      {/* Understanding Status */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
+        <button
+          onClick={() => handleUnderstandingStatus(topic.understanding_status === 'understood' ? 'none' : 'understood')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            border: topic.understanding_status === 'understood' ? '1px solid #6B8E23' : '1px solid var(--border)',
+            background: topic.understanding_status === 'understood' ? '#eef5e1' : 'var(--card-bg)',
+            color: topic.understanding_status === 'understood' ? '#4d6915' : 'var(--text-main)',
+            transition: 'all 0.1s',
+          }}
+        >
+          <Brain size={14} /> Understood
+        </button>
+        <button
+          onClick={() => handleUnderstandingStatus(topic.understanding_status === 'need_revision' ? 'none' : 'need_revision')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.35rem 0.85rem',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            border: topic.understanding_status === 'need_revision' ? '1px solid #DAA520' : '1px solid var(--border)',
+            background: topic.understanding_status === 'need_revision' ? '#fff9e6' : 'var(--card-bg)',
+            color: topic.understanding_status === 'need_revision' ? '#997415' : 'var(--text-main)',
+            transition: 'all 0.1s',
+          }}
+        >
+          <AlertCircle size={14} /> Needs Revision
+        </button>
       </div>
 
       {/* Study session */}
