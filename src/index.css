@@ -998,3 +998,467 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
   margin-top: 7px;
 }
+
+/* ─── Pandora Timer ──────────────────────────────────────── */
+.pandora-timer-page {
+  max-width: 680px;
+  margin: 0 auto;
+  animation: fadeIn 0.25s ease;
+}
+
+.pandora-timer-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.pandora-timer-header .page-title {
+  font-size: 1.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.pandora-timer-header .page-title span {
+  background: linear-gradient(135deg, var(--accent), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Mode Toggle ─────────────────────────────────────────── */
+.pandora-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 1.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pandora-mode-btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.pandora-mode-btn:hover {
+  color: var(--text);
+}
+
+.pandora-mode-btn.active-focus {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+}
+
+.pandora-mode-btn.active-break {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.35);
+}
+
+/* ─── Timer Setup Card ────────────────────────────────────── */
+.pandora-setup-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.pandora-setup-card .form-group {
+  margin-bottom: 0.875rem;
+}
+
+.pandora-setup-card .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.pandora-setup-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+.pandora-duration-section {
+  margin-bottom: 0;
+}
+
+.pandora-duration-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pandora-duration-input-row .form-input {
+  width: 120px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.pandora-duration-unit {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ─── Quick Pick Buttons ──────────────────────────────────── */
+.pandora-quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+}
+
+.pandora-quick-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.pandora-quick-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.pandora-quick-btn.selected {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent);
+}
+
+/* ─── Circular Timer Display ─────────────────────────────── */
+.pandora-timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.pandora-timer-ring-wrap {
+  position: relative;
+  width: 260px;
+  height: 260px;
+}
+
+.pandora-timer-svg {
+  width: 260px;
+  height: 260px;
+  transform: rotate(-90deg);
+}
+
+.pandora-timer-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 8;
+}
+
+.pandora-timer-progress {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s linear;
+}
+
+.pandora-timer-progress.focus-mode {
+  stroke: url(#pandora-gradient-focus);
+}
+
+.pandora-timer-progress.break-mode {
+  stroke: url(#pandora-gradient-break);
+}
+
+.pandora-timer-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pandora-timer-time {
+  font-family: 'Inter', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.pandora-timer-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pandora-timer-target {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 0.75rem;
+  text-align: center;
+  max-width: 200px;
+  line-height: 1.4;
+}
+
+/* ─── Timer Controls ──────────────────────────────────────── */
+.pandora-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pandora-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.pandora-ctrl-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pandora-ctrl-btn.start {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.pandora-ctrl-btn.start:hover {
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+  transform: translateY(-1px);
+}
+
+.pandora-ctrl-btn.start.break-active {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.pandora-ctrl-btn.start.break-active:hover {
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.45);
+}
+
+.pandora-ctrl-btn.pause {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.pandora-ctrl-btn.pause:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.pandora-ctrl-btn.reset {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.pandora-ctrl-btn.reset:hover {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.pandora-ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ─── Alarm Overlay ───────────────────────────────────────── */
+.pandora-alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: fadeIn 0.3s ease;
+}
+
+.pandora-alarm-card {
+  text-align: center;
+  max-width: 400px;
+  padding: 3rem 2.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  animation: slideUp 0.3s ease, pandoraPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.15), 0 0 120px rgba(239, 68, 68, 0.08);
+}
+
+.pandora-alarm-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: pandoraBell 0.5s ease-in-out infinite alternate;
+  display: inline-block;
+}
+
+.pandora-alarm-title {
+  font-family: 'Lora', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+
+.pandora-alarm-message {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.375rem;
+  line-height: 1.5;
+}
+
+.pandora-alarm-topic {
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.pandora-alarm-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2.5rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+  transition: all 0.2s ease;
+}
+
+.pandora-alarm-stop:hover {
+  box-shadow: 0 6px 30px rgba(239, 68, 68, 0.55);
+  transform: translateY(-2px);
+}
+
+.pandora-alarm-stop svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes pandoraPulse {
+  0%, 100% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.15), 0 0 120px rgba(239, 68, 68, 0.08); }
+  50% { box-shadow: 0 0 80px rgba(239, 68, 68, 0.25), 0 0 160px rgba(239, 68, 68, 0.15); }
+}
+
+@keyframes pandoraBell {
+  0% { transform: rotate(-15deg); }
+  100% { transform: rotate(15deg); }
+}
+
+/* ─── Pandora Notification Badge ──────────────────────────── */
+.pandora-notif-hint {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.pandora-notif-btn {
+  font-size: 0.775rem;
+  color: var(--text-light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+
+.pandora-notif-btn:hover {
+  color: var(--accent);
+}
+
+/* ─── Pandora Responsive ─────────────────────────────────── */
+@media (max-width: 768px) {
+  .pandora-timer-ring-wrap,
+  .pandora-timer-svg {
+    width: 220px;
+    height: 220px;
+  }
+
+  .pandora-timer-time {
+    font-size: 2.5rem;
+  }
+
+  .pandora-setup-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pandora-ctrl-btn {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  .pandora-alarm-card {
+    margin: 1rem;
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pandora-timer-ring-wrap,
+  .pandora-timer-svg {
+    width: 190px;
+    height: 190px;
+  }
+
+  .pandora-timer-time {
+    font-size: 2.25rem;
+  }
+
+  .pandora-mode-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .pandora-quick-picks {
+    justify-content: center;
+  }
+}
