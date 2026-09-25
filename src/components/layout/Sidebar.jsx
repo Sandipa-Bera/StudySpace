@@ -10,12 +10,14 @@ import {
   Settings,
   LogOut,
   Timer,
+  CheckSquare,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/subjects', label: 'Subjects', icon: BookOpen },
   { to: '/journal', label: 'Journal', icon: BookMarked },
   { to: '/pandora-timer', label: 'Pandora Timer', icon: Timer },
