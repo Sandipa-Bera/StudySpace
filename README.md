@@ -2,6 +2,8 @@
 
 > A simple and cozy study management app for organizing learning, notes, files, and revision.
 
+🌐 **Live Demo:** https://study-space-organizer.vercel.app/
+
 ## ✨ Overview
 
 **StudySpace** helps students manage their academic work in one place. It organizes study material into subjects, chapters, and topics while allowing users to track completion, understanding, revision, and notes.
@@ -115,3 +117,7 @@ StudySpace is currently under development.
 StudySpace aims to become a **personal digital study desk** where students can organize what they need to learn, track their progress, keep their resources together, and build better study habits.
 
 > **Organize. Learn. Revise. Grow. 📚✨**
+
+---
+
+🌐 **Try StudySpace:** https://study-space-organizer.vercel.app/
