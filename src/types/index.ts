@@ -57,6 +57,7 @@ export interface JournalEntry {
   content: string;
   mood: string | null;
   sticker: string | null;
+  photo_url: string | null;
   entry_date: string;
   created_at: string;
   updated_at: string;
@@ -146,6 +147,7 @@ export interface JournalFormData {
   content: string;
   mood: string;
   sticker: string;
+  photo_url: string;
   entry_date: string;
 }
 

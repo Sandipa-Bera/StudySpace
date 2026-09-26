@@ -30,6 +30,7 @@ export const journalService = {
         content: form.content,
         mood: form.mood || null,
         sticker: form.sticker || null,
+        photo_url: form.photo_url || null,
         entry_date: form.entry_date,
       })
       .select()
@@ -46,6 +47,7 @@ export const journalService = {
         content: form.content,
         mood: form.mood || null,
         sticker: form.sticker || null,
+        photo_url: form.photo_url || null,
         entry_date: form.entry_date,
       })
       .eq('id', id)

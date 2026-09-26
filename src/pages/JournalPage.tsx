@@ -1,35 +1,61 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Calendar, List, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Plus, Pencil, Trash2, Calendar, List, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { journalService } from '../services/journal.service';
 import { Modal } from '../components/ui/Modal';
 import { LoadingState } from '../components/ui/LoadingState';
 import { EmptyState } from '../components/ui/EmptyState';
-import { formatEntryDate, todayISO } from '../utils/date';
+import { formatEntryDate, formatShortDate, todayISO } from '../utils/date';
 import type { JournalEntry, JournalFormData } from '../types';
 
-const STICKERS = ['🌸', '☕', '🌙', '🐻', '🍓', '⭐', '🌱', '🌷', '📖', '✏️'];
-
-const MOODS = ['Great', 'Good', 'Okay', 'Tired', 'Rough'];
-
-const PROMPTS = [
-  "What did you learn today?",
-  "What are you proud of today?",
-  "What was difficult today?",
-  "What do you want to improve tomorrow?",
-  "How are you feeling about your progress?",
+/* ─── Mood definitions ──────────────────────────────────────── */
+const MOODS = [
+  { emoji: '😭', label: 'Not Okay', key: 'not_okay' },
+  { emoji: '😔', label: 'Heavy Heart', key: 'heavy_heart' },
+  { emoji: '😡', label: 'Angry', key: 'angry' },
+  { emoji: '😵‍💫', label: 'Too Much', key: 'too_much' },
+  { emoji: '🫠', label: 'Exhausted', key: 'exhausted' },
+  { emoji: '😐', label: 'Numb', key: 'numb' },
+  { emoji: '😌', label: 'At Peace', key: 'at_peace' },
+  { emoji: '😊', label: 'Happy', key: 'happy' },
+  { emoji: '🥰', label: 'Loved', key: 'loved' },
+  { emoji: '🤩', label: 'Excited', key: 'excited' },
+  { emoji: '🫶', label: 'Grateful', key: 'grateful' },
+  { emoji: '🤭', label: 'Silly', key: 'silly' },
 ];
+
+/** Get the mood object from an entry's stored mood or sticker */
+function getMoodFromEntry(entry: JournalEntry) {
+  // Try matching by key first (new system)
+  const byKey = MOODS.find(m => m.key === entry.mood);
+  if (byKey) return byKey;
+  // Try matching by label (fallback)
+  const byLabel = MOODS.find(m => m.label.toLowerCase() === (entry.mood ?? '').toLowerCase());
+  if (byLabel) return byLabel;
+  // Try matching old sticker as emoji
+  const byEmoji = MOODS.find(m => m.emoji === entry.sticker);
+  if (byEmoji) return byEmoji;
+  // Fallback for old moods that don't match new system
+  if (entry.mood) {
+    return { emoji: '📝', label: entry.mood, key: entry.mood.toLowerCase() };
+  }
+  if (entry.sticker) {
+    return { emoji: entry.sticker, label: '', key: '' };
+  }
+  return null;
+}
 
 const DEFAULT_FORM: JournalFormData = {
   title: '',
   content: '',
   mood: '',
   sticker: '',
+  photo_url: '',
   entry_date: todayISO(),
 };
 
-type ViewMode = 'timeline' | 'calendar';
+type PageView = 'list' | 'calendar' | 'new' | 'edit' | 'detail';
 
 export function JournalPage() {
   const { user } = useAuth();
@@ -37,14 +63,15 @@ export function JournalPage() {
 
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<JournalEntry | null>(null);
-  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'delete' | null>(null);
   const [form, setForm] = useState<JournalFormData>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
+  const [pageView, setPageView] = useState<PageView>('list');
+  const [listMode, setListMode] = useState<'timeline' | 'calendar'>('timeline');
   const [viewEntry, setViewEntry] = useState<JournalEntry | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
+  const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showPrompt, setShowPrompt] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) loadEntries();
@@ -63,48 +90,89 @@ export function JournalPage() {
     }
   };
 
-  const openAdd = () => {
-    const randomPrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
-    setForm({ ...DEFAULT_FORM, entry_date: todayISO(), content: randomPrompt });
-    setSelected(null);
-    setModalMode('add');
-    setShowPrompt(true);
+  /* ─── Navigation helpers ──────────────────────────────────── */
+  const goToNew = () => {
+    setForm({ ...DEFAULT_FORM, entry_date: todayISO() });
+    setEditEntry(null);
+    setPageView('new');
   };
 
-  const openEdit = (e: JournalEntry, ev: React.MouseEvent) => {
-    ev.stopPropagation();
+  const goToEdit = (entry: JournalEntry) => {
+    const mood = getMoodFromEntry(entry);
     setForm({
-      title: e.title,
-      content: e.content,
-      mood: e.mood ?? '',
-      sticker: e.sticker ?? '',
-      entry_date: e.entry_date,
+      title: entry.title || '',
+      content: entry.content || '',
+      mood: mood?.key || '',
+      sticker: mood?.emoji || entry.sticker || '',
+      photo_url: entry.photo_url || '',
+      entry_date: entry.entry_date,
     });
-    setSelected(e);
-    setModalMode('edit');
+    setEditEntry(entry);
+    setPageView('edit');
   };
 
-  const openDelete = (e: JournalEntry, ev: React.MouseEvent) => {
-    ev.stopPropagation();
-    setSelected(e);
-    setModalMode('delete');
+  const goToDetail = (entry: JournalEntry) => {
+    setViewEntry(entry);
+    setPageView('detail');
   };
 
-  const handleSave = async (ev: React.FormEvent) => {
-    ev.preventDefault();
-    if (!form.title.trim() || !user) return;
+  const goBack = () => {
+    setPageView('list');
+    setViewEntry(null);
+    setEditEntry(null);
+  };
+
+  /* ─── Form handlers ──────────────────────────────────────── */
+  const selectMood = (moodKey: string, moodEmoji: string) => {
+    if (form.mood === moodKey) {
+      setForm({ ...form, mood: '', sticker: '' });
+    } else {
+      setForm({ ...form, mood: moodKey, sticker: moodEmoji });
+    }
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Validate size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Photo must be smaller than 5MB', 'error');
+      return;
+    }
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setForm({ ...form, photo_url: ev.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setForm({ ...form, photo_url: '' });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    if (!form.content.trim() && !form.mood) {
+      showToast('Write something or select a mood first', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      if (modalMode === 'add') {
+      if (pageView === 'new') {
         await journalService.create(user.id, form);
-        showToast('Journal entry created.');
-      } else if (modalMode === 'edit' && selected) {
-        await journalService.update(selected.id, form);
-        showToast('Journal entry updated.');
+        showToast('Journal entry saved ✨');
+      } else if (pageView === 'edit' && editEntry) {
+        await journalService.update(editEntry.id, form);
+        showToast('Entry updated ✨');
       }
-      setModalMode(null);
-      setViewEntry(null);
       await loadEntries();
+      goBack();
     } catch {
       showToast('Failed to save entry', 'error');
     } finally {
@@ -113,14 +181,14 @@ export function JournalPage() {
   };
 
   const handleDelete = async () => {
-    if (!selected) return;
+    if (!deleteTarget) return;
     setSaving(true);
     try {
-      await journalService.delete(selected.id);
+      await journalService.delete(deleteTarget.id);
       showToast('Entry deleted.');
-      setModalMode(null);
-      setViewEntry(null);
+      setDeleteTarget(null);
       await loadEntries();
+      if (pageView === 'detail') goBack();
     } catch {
       showToast('Failed to delete entry', 'error');
     } finally {
@@ -128,9 +196,7 @@ export function JournalPage() {
     }
   };
 
-  if (loading) return <LoadingState />;
-
-  // Calendar helpers
+  /* ─── Calendar helpers ──────────────────────────────────── */
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -138,20 +204,10 @@ export function JournalPage() {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startDayOfWeek = firstDay.getDay();
-
-    const days = [];
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(null);
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
-    }
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < startDayOfWeek; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
     return days;
-  };
-
-  const hasEntryOnDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return entries.some(entry => entry.entry_date === dateStr);
   };
 
   const getEntryForDate = (date: Date) => {
@@ -162,35 +218,265 @@ export function JournalPage() {
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentMonth(prev => {
       const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(newDate.getMonth() - 1);
-      } else {
-        newDate.setMonth(newDate.getMonth() + 1);
-      }
+      if (direction === 'prev') newDate.setMonth(newDate.getMonth() - 1);
+      else newDate.setMonth(newDate.getMonth() + 1);
       return newDate;
     });
   };
 
+  /* ─── Formatted date for display ──────────────────────── */
+  const todayFormatted = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  if (loading) return <LoadingState />;
+
+  /* ═══════════════════════════════════════════════════════════
+     NEW / EDIT — Full-page journal editor
+     ═══════════════════════════════════════════════════════════ */
+  if (pageView === 'new' || pageView === 'edit') {
+    const isEdit = pageView === 'edit';
+    return (
+      <div className="journal-editor">
+        {/* Header */}
+        <div className="journal-detail-nav">
+          <button className="btn btn-ghost btn-sm" onClick={goBack}>
+            ← Back
+          </button>
+          <h1
+            style={{
+              fontFamily: 'Lora, serif',
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              color: 'var(--primary)',
+              margin: 0,
+            }}
+          >
+            {isEdit ? 'Edit Entry' : 'New Entry'}
+          </h1>
+        </div>
+
+        {/* Date */}
+        <div className="journal-editor-header">
+          <div className="journal-editor-date">
+            📅 {isEdit ? formatEntryDate(form.entry_date) : todayFormatted}
+          </div>
+
+          {/* Title (optional) */}
+          <input
+            type="text"
+            className="journal-editor-title-input"
+            placeholder="Give this entry a title (optional)"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            autoFocus={!isEdit}
+          />
+        </div>
+
+        {/* Mood selector */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div className="journal-section-label">
+            💭 How are you feeling today?
+          </div>
+          <div className="mood-selector">
+            {MOODS.map((mood) => (
+              <button
+                key={mood.key}
+                type="button"
+                className={`mood-option${form.mood === mood.key ? ' selected' : ''}`}
+                onClick={() => selectMood(mood.key, mood.emoji)}
+                aria-label={`Select mood: ${mood.label}`}
+                aria-pressed={form.mood === mood.key}
+              >
+                <span className="mood-emoji">{mood.emoji}</span>
+                <span className="mood-label">{mood.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Writing area */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div className="journal-section-label">
+            ✍️ What's on your mind?
+          </div>
+          <textarea
+            className="journal-textarea"
+            placeholder="Write whatever you want. There are no rules here."
+            value={form.content}
+            onChange={(e) => setForm({ ...form, content: e.target.value })}
+          />
+        </div>
+
+        {/* Photo attachment */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div className="journal-section-label">
+            📷 Add a photo
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoSelect}
+          />
+          {form.photo_url ? (
+            <div className="journal-photo-preview">
+              <img src={form.photo_url} alt="Attached photo" />
+              <button
+                className="photo-remove-btn"
+                onClick={removePhoto}
+                aria-label="Remove photo"
+                title="Remove photo"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div
+              className="journal-photo-zone"
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+            >
+              <div className="journal-photo-zone-label">
+                <span className="photo-icon">📸</span>
+                <span>Click to attach a photo (optional)</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Save */}
+        <div className="journal-save-area">
+          <button className="btn btn-ghost" onClick={goBack}>
+            Cancel
+          </button>
+          <button
+            className="btn-save-entry"
+            onClick={handleSave}
+            disabled={saving || (!form.content.trim() && !form.mood)}
+          >
+            {saving ? 'Saving…' : isEdit ? 'Update Entry' : 'Save Entry'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     DETAIL — View a single journal entry
+     ═══════════════════════════════════════════════════════════ */
+  if (pageView === 'detail' && viewEntry) {
+    const mood = getMoodFromEntry(viewEntry);
+    return (
+      <div className="journal-detail">
+        <div className="journal-detail-nav">
+          <button className="btn btn-ghost btn-sm" onClick={goBack}>
+            ← Back
+          </button>
+          <div className="journal-detail-actions">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => goToEdit(viewEntry)}
+            >
+              <Pencil size={13} /> Edit
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ color: 'var(--error)' }}
+              onClick={() => setDeleteTarget(viewEntry)}
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          </div>
+        </div>
+
+        <div className="journal-detail-card">
+          {/* Date */}
+          <div className="journal-detail-date">
+            {formatEntryDate(viewEntry.entry_date)}
+          </div>
+
+          {/* Mood */}
+          {mood && (
+            <div className="journal-detail-mood">
+              <span className="journal-detail-mood-emoji">{mood.emoji}</span>
+              {mood.label && (
+                <span className="journal-detail-mood-name">{mood.label}</span>
+              )}
+            </div>
+          )}
+
+          {/* Title */}
+          {viewEntry.title && (
+            <h1 className="journal-detail-title">{viewEntry.title}</h1>
+          )}
+
+          {/* Content */}
+          <div className="journal-detail-content">
+            {viewEntry.content || (
+              <em style={{ color: 'var(--text-light)' }}>No content written.</em>
+            )}
+          </div>
+
+          {/* Photo */}
+          {viewEntry.photo_url && (
+            <div className="journal-detail-photo">
+              <img src={viewEntry.photo_url} alt="Journal photo" />
+            </div>
+          )}
+        </div>
+
+        {/* Delete confirmation modal */}
+        {deleteTarget && (
+          <Modal title="Delete Entry" onClose={() => setDeleteTarget(null)}>
+            <div className="journal-delete-warning">
+              <div className="delete-emoji">🗑️</div>
+              <p>
+                Are you sure you want to delete this journal entry?
+                <br />
+                <strong>This cannot be undone.</strong>
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                {saving ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     LIST / CALENDAR — Main journal view
+     ═══════════════════════════════════════════════════════════ */
   const renderCalendar = () => {
     const days = getDaysInMonth(currentMonth);
-    const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const monthName = currentMonth.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
 
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigateMonth('prev')}
-          >
+          <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth('prev')}>
             <ChevronLeft size={16} />
           </button>
-          <h2 style={{ fontSize: '1.1rem', fontFamily: 'Lora, serif', fontWeight: 600, color: 'var(--choco)', margin: 0 }}>
+          <h2 style={{ fontSize: '1.1rem', fontFamily: 'Lora, serif', fontWeight: 600, color: 'var(--primary)', margin: 0 }}>
             {monthName}
           </h2>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigateMonth('next')}
-          >
+          <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth('next')}>
             <ChevronRight size={16} />
           </button>
         </div>
@@ -205,39 +491,32 @@ export function JournalPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.25rem' }}>
           {days.map((date, index) => {
-            if (!date) {
-              return <div key={`empty-${index}`} style={{ aspectRatio: 1 }} />;
-            }
+            if (!date) return <div key={`empty-${index}`} style={{ aspectRatio: 1 }} />;
 
-            const hasEntry = hasEntryOnDate(date);
             const entry = getEntryForDate(date);
+            const hasEntry = !!entry;
             const isToday = date.toDateString() === new Date().toDateString();
+            const mood = entry ? getMoodFromEntry(entry) : null;
+
+            const classes = [
+              'journal-cal-cell',
+              hasEntry ? 'has-entry' : '',
+              isToday ? 'is-today' : '',
+            ].filter(Boolean).join(' ');
 
             return (
               <button
                 key={date.toISOString()}
-                onClick={() => entry && setViewEntry(entry)}
+                className={classes}
+                onClick={() => entry && goToDetail(entry)}
                 disabled={!hasEntry}
                 style={{
-                  aspectRatio: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  fontWeight: isToday ? 600 : 400,
-                  border: hasEntry ? '1px solid var(--warm)' : '1px solid var(--border)',
-                  background: hasEntry ? 'var(--sand)' : isToday ? 'var(--parchment)' : 'transparent',
-                  color: hasEntry ? 'var(--choco)' : isToday ? 'var(--brown)' : 'var(--text-muted)',
-                  cursor: hasEntry ? 'pointer' : 'default',
-                  position: 'relative',
+                  fontWeight: isToday ? 700 : 400,
                 }}
               >
                 {date.getDate()}
-                {entry?.sticker && (
-                  <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: '0.6rem' }}>
-                    {entry.sticker}
-                  </span>
+                {mood && (
+                  <span className="cal-mood-dot">{mood.emoji}</span>
                 )}
               </button>
             );
@@ -247,80 +526,62 @@ export function JournalPage() {
     );
   };
 
-  // View single entry
-  if (viewEntry) {
+  const renderEntryCard = (entry: JournalEntry) => {
+    const mood = getMoodFromEntry(entry);
     return (
-      <div style={{ animation: 'fadeIn 0.2s ease', maxWidth: 640 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setViewEntry(null)}>
-            ← Back
-          </button>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.375rem' }}>
-            <button className="btn btn-ghost btn-sm" onClick={(e) => { setViewEntry(null); openEdit(viewEntry, e); }}>
-              <Pencil size={13} /> Edit
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              style={{ color: 'var(--rose)' }}
-              onClick={(e) => { openDelete(viewEntry, e); }}
-            >
-              <Trash2 size={13} /> Delete
-            </button>
-          </div>
+      <div
+        key={entry.id}
+        className="journal-entry-card"
+        onClick={() => goToDetail(entry)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && goToDetail(entry)}
+        aria-label={`Open journal entry: ${entry.title || 'Untitled'}`}
+      >
+        {/* Mood emoji */}
+        <div className="journal-card-mood">
+          {mood?.emoji || '📝'}
         </div>
 
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: '2rem',
-          }}
-        >
-          {viewEntry.sticker && (
-            <div className="journal-sticker">{viewEntry.sticker}</div>
+        {/* Body */}
+        <div className="journal-card-body">
+          <div className="journal-card-meta">
+            <span className="journal-date">{formatShortDate(entry.entry_date)}</span>
+            {mood?.label && (
+              <span className="journal-mood-label">{mood.label}</span>
+            )}
+          </div>
+          {entry.title && (
+            <h3 className="journal-title">{entry.title}</h3>
           )}
-          <div className="journal-date">{formatEntryDate(viewEntry.entry_date)}</div>
-          <h1
-            style={{
-              fontFamily: 'Lora, serif',
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: 'var(--choco)',
-              margin: '0.25rem 0 1.25rem',
-            }}
-          >
-            {viewEntry.title}
-          </h1>
-          <div
-            style={{
-              whiteSpace: 'pre-wrap',
-              lineHeight: 1.8,
-              fontSize: '0.9rem',
-              color: 'var(--text-main)',
-            }}
-          >
-            {viewEntry.content || <em style={{ color: 'var(--text-light)' }}>No content.</em>}
-          </div>
+          {entry.content && (
+            <p className="journal-preview">{entry.content}</p>
+          )}
         </div>
 
-        {/* Delete modal while viewing */}
-        {modalMode === 'delete' && selected && (
-          <Modal title="Delete Entry" onClose={() => setModalMode(null)}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Delete <strong>{selected.title}</strong>? This cannot be undone.
-            </p>
-            <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setModalMode(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
-                {saving ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </Modal>
-        )}
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignSelf: 'flex-start' }}>
+          <button
+            className="btn-icon"
+            onClick={(e) => { e.stopPropagation(); goToEdit(entry); }}
+            aria-label="Edit"
+            title="Edit"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            className="btn-icon"
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(entry); }}
+            aria-label="Delete"
+            title="Delete"
+            style={{ color: 'var(--error)' }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
     );
-  }
+  };
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease', maxWidth: 680 }}>
@@ -328,34 +589,40 @@ export function JournalPage() {
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
         <div>
           <h1 className="page-title">Journal</h1>
-          <p className="page-subtitle">Your personal daily diary.</p>
+          <p className="page-subtitle" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            You don't have to pretend you're okay here.
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', background: 'var(--parchment)', borderRadius: '8px', padding: '0.25rem' }}>
+          <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.25rem' }}>
             <button
               className="btn btn-ghost btn-sm"
-              onClick={() => setViewMode('timeline')}
+              onClick={() => setListMode('timeline')}
               style={{
-                background: viewMode === 'timeline' ? 'var(--sand)' : 'transparent',
+                background: listMode === 'timeline' ? 'var(--accent)' : 'transparent',
+                color: listMode === 'timeline' ? '#fff' : 'var(--text-muted)',
                 borderRadius: '6px',
                 padding: '0.375rem 0.75rem',
               }}
+              aria-label="Timeline view"
             >
               <List size={14} />
             </button>
             <button
               className="btn btn-ghost btn-sm"
-              onClick={() => setViewMode('calendar')}
+              onClick={() => setListMode('calendar')}
               style={{
-                background: viewMode === 'calendar' ? 'var(--sand)' : 'transparent',
+                background: listMode === 'calendar' ? 'var(--accent)' : 'transparent',
+                color: listMode === 'calendar' ? '#fff' : 'var(--text-muted)',
                 borderRadius: '6px',
                 padding: '0.375rem 0.75rem',
               }}
+              aria-label="Calendar view"
             >
               <Calendar size={14} />
             </button>
           </div>
-          <button className="btn btn-primary" onClick={openAdd}>
+          <button className="btn btn-primary" onClick={goToNew}>
             <Plus /> New Entry
           </button>
         </div>
@@ -363,56 +630,18 @@ export function JournalPage() {
 
       {entries.length === 0 ? (
         <EmptyState
-          icon="🌸"
+          icon="📝"
           title="Your journal is empty"
-          description="Write about your day."
+          description="Start writing about your day. No rules, no judgment."
           action={
-            <button className="btn btn-primary" onClick={openAdd}>
+            <button className="btn btn-primary" onClick={goToNew}>
               <Plus /> New Entry
             </button>
           }
         />
-      ) : viewMode === 'timeline' ? (
+      ) : listMode === 'timeline' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="journal-entry-card"
-              onClick={() => setViewEntry(entry)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setViewEntry(entry)}
-              aria-label={`Open ${entry.title}`}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {entry.sticker && <span className="journal-sticker">{entry.sticker}</span>}
-                  <div className="journal-date">{formatEntryDate(entry.entry_date)}</div>
-                  <h3 className="journal-title">{entry.title}</h3>
-                  {entry.content && <p className="journal-preview">{entry.content}</p>}
-                </div>
-                <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
-                  <button
-                    className="btn-icon"
-                    onClick={(e) => openEdit(entry, e)}
-                    aria-label={`Edit ${entry.title}`}
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    className="btn-icon"
-                    onClick={(e) => openDelete(entry, e)}
-                    aria-label={`Delete ${entry.title}`}
-                    title="Delete"
-                    style={{ color: 'var(--rose)' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+          {entries.map(renderEntryCard)}
         </div>
       ) : (
         <div className="card" style={{ padding: '1.5rem' }}>
@@ -420,127 +649,27 @@ export function JournalPage() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      {(modalMode === 'add' || modalMode === 'edit') && (
-        <Modal
-          title={modalMode === 'add' ? 'New Journal Entry' : 'Edit Entry'}
-          onClose={() => setModalMode(null)}
-        >
-          <form onSubmit={handleSave}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="entry-date">Date</label>
-              <input
-                id="entry-date"
-                type="date"
-                className="form-input"
-                value={form.entry_date}
-                onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="entry-title">Title</label>
-              <input
-                id="entry-title"
-                type="text"
-                className="form-input"
-                placeholder="A Productive Day"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Sticker</label>
-              <div className="sticker-grid">
-                {STICKERS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`sticker-option${form.sticker === s ? ' selected' : ''}`}
-                    onClick={() => setForm({ ...form, sticker: form.sticker === s ? '' : s })}
-                    aria-label={`Select sticker ${s}`}
-                    aria-pressed={form.sticker === s}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Mood</label>
-              <div className="sticker-grid">
-                {MOODS.map((mood) => (
-                  <button
-                    key={mood}
-                    type="button"
-                    className={`sticker-option${form.mood === mood ? ' selected' : ''}`}
-                    onClick={() => setForm({ ...form, mood: form.mood === mood ? '' : mood })}
-                    aria-label={`Select mood ${mood}`}
-                    aria-pressed={form.mood === mood}
-                    style={{ fontSize: '0.8rem' }}
-                  >
-                    {mood}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {showPrompt && (
-              <div style={{
-                padding: '0.75rem',
-                background: 'var(--blush)',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-                fontSize: '0.875rem',
-                color: 'var(--brown)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}>
-                <Sparkles size={16} />
-                <span>Writing prompt: {form.content}</span>
-                <button
-                  className="btn-icon"
-                  onClick={() => {
-                    setForm({ ...form, content: '' });
-                    setShowPrompt(false);
-                  }}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            )}
-            <div className="form-group">
-              <label className="form-label" htmlFor="entry-content">What's on your mind?</label>
-              <textarea
-                id="entry-content"
-                className="form-textarea"
-                placeholder="Today I…"
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                style={{ minHeight: 140 }}
-              />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setModalMode(null)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={saving || !form.title.trim()}>
-                {saving ? 'Saving…' : modalMode === 'add' ? 'Save Entry' : 'Update'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Delete Confirm */}
-      {modalMode === 'delete' && selected && (
-        <Modal title="Delete Entry" onClose={() => setModalMode(null)}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Delete <strong>{selected.title}</strong>?
-          </p>
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <Modal title="Delete Entry" onClose={() => setDeleteTarget(null)}>
+          <div className="journal-delete-warning">
+            <div className="delete-emoji">🗑️</div>
+            <p>
+              Are you sure you want to delete this journal entry?
+              {deleteTarget.title && (
+                <>
+                  <br />
+                  <strong>"{deleteTarget.title}"</strong>
+                </>
+              )}
+              <br />
+              <span style={{ fontSize: '0.8rem' }}>This cannot be undone.</span>
+            </p>
+          </div>
           <div className="modal-actions">
-            <button className="btn btn-ghost" onClick={() => setModalMode(null)}>Cancel</button>
+            <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </button>
             <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
               {saving ? 'Deleting…' : 'Delete'}
             </button>
