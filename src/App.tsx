@@ -5,6 +5,7 @@ import { ToastProvider } from './hooks/useToast';
 import { ThemeProvider } from './hooks/useTheme';
 import { AppLayout } from './layouts/AppLayout';
 import { AuthPage } from './pages/AuthPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { SubjectsPage } from './pages/SubjectsPage';
 import { SubjectDetailPage } from './pages/SubjectDetailPage';
@@ -38,8 +39,25 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* ── Auth routes (public only) ── */}
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
 
+      {/*
+        OAuth callback: Google redirects here after sign-in.
+        Supabase detects the token in the URL hash and fires SIGNED_IN via
+        onAuthStateChange. The PublicRoute will then redirect to "/" automatically.
+      */}
+      <Route path="/auth/callback" element={<PublicRoute><AuthPage /></PublicRoute>} />
+
+      {/*
+        Password-reset landing page. This must NOT be wrapped in PublicRoute
+        because the user has a temporary PASSWORD_RECOVERY session when they
+        arrive here. The route is intentionally unguarded (no ProtectedRoute
+        either) so both authenticated and unauthenticated states work.
+      */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* ── Protected app routes ── */}
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/subjects" element={<ProtectedRoute><SubjectsPage /></ProtectedRoute>} />
       <Route path="/subjects/:subjectId" element={<ProtectedRoute><SubjectDetailPage /></ProtectedRoute>} />

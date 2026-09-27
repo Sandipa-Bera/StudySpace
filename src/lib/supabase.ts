@@ -9,6 +9,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-console.log('[Supabase] Initializing with URL:', supabaseUrl);
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Persist session across page refreshes using localStorage
+    persistSession: true,
+    // Automatically refresh the JWT before it expires
+    autoRefreshToken: true,
+    // Detect OAuth/magic-link/reset sessions that land back in the URL hash/query
+    detectSessionInUrl: true,
+  },
+});
