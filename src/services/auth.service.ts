@@ -30,6 +30,26 @@ export const authService = {
     return data.session;
   },
 
+  /**
+   * Send a password-reset email. Uses a vague success message regardless of
+   * whether the email exists, to prevent user enumeration.
+   */
+  async requestPasswordReset(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  },
+
+  /**
+   * Set a new password. Must be called while the user holds a valid
+   * PASSWORD_RECOVERY session (after clicking the reset link).
+   */
+  async updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  },
+
   onAuthStateChange(callback: Parameters<typeof supabase.auth.onAuthStateChange>[0]) {
     return supabase.auth.onAuthStateChange(callback);
   },
