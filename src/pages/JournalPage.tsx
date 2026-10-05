@@ -55,7 +55,7 @@ const DEFAULT_FORM: JournalFormData = {
   entry_date: todayISO(),
 };
 
-type PageView = 'list' | 'calendar' | 'new' | 'edit' | 'detail';
+type PageView = 'list' | 'calendar' | 'new' | 'edit' | 'detail' | 'date-entries';
 
 export function JournalPage() {
   const { user } = useAuth();
@@ -71,24 +71,36 @@ export function JournalPage() {
   const [editEntry, setEditEntry] = useState<JournalEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDateEntries, setSelectedDateEntries] = useState<JournalEntry[]>([]);
+  const [selectedDateLabel, setSelectedDateLabel] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (user) loadEntries();
-  }, [user]);
-
   const loadEntries = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await journalService.getAll(user.id);
       setEntries(data);
-    } catch {
+    } catch (err) {
+      console.error('[JournalPage] loadEntries failed:', err);
       showToast('Failed to load journal', 'error');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      loadEntries();
+    } else {
+      // User is guaranteed by ProtectedRoute, but guard defensively
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   /* ─── Navigation helpers ──────────────────────────────────── */
   const goToNew = () => {
@@ -118,6 +130,14 @@ export function JournalPage() {
 
   const goBack = () => {
     setPageView('list');
+    setViewEntry(null);
+    setEditEntry(null);
+    setSelectedDateEntries([]);
+    setSelectedDateLabel('');
+  };
+
+  const goBackToDate = () => {
+    setPageView('date-entries');
     setViewEntry(null);
     setEditEntry(null);
   };
@@ -186,9 +206,31 @@ export function JournalPage() {
     try {
       await journalService.delete(deleteTarget.id);
       showToast('Entry deleted.');
+      const deletedId = deleteTarget.id;
       setDeleteTarget(null);
       await loadEntries();
-      if (pageView === 'detail') goBack();
+      if (pageView === 'detail') {
+        // If we came from date-entries, go back there with updated list
+        if (selectedDateEntries.length > 0) {
+          const remaining = selectedDateEntries.filter(e => e.id !== deletedId);
+          if (remaining.length === 0) {
+            goBack();
+          } else {
+            setSelectedDateEntries(remaining);
+            goBackToDate();
+          }
+        } else {
+          goBack();
+        }
+      } else if (pageView === 'date-entries') {
+        // Update the list inline; if empty go back
+        const remaining = selectedDateEntries.filter(e => e.id !== deletedId);
+        if (remaining.length === 0) {
+          goBack();
+        } else {
+          setSelectedDateEntries(remaining);
+        }
+      }
     } catch {
       showToast('Failed to delete entry', 'error');
     } finally {
@@ -210,9 +252,28 @@ export function JournalPage() {
     return days;
   };
 
-  const getEntryForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return entries.find(entry => entry.entry_date === dateStr);
+  const getEntriesForDate = (date: Date) => {
+    // Use local year/month/day to avoid UTC timezone offset issues
+    // (toISOString() converts to UTC which can shift the date by a day for IST users)
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    return entries.filter(entry => entry.entry_date === dateStr);
+  };
+
+  const goToDateEntries = (date: Date) => {
+    const dateEntries = getEntriesForDate(date);
+    if (dateEntries.length === 0) return;
+    const label = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    setSelectedDateEntries(dateEntries);
+    setSelectedDateLabel(label);
+    setPageView('date-entries');
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -231,6 +292,64 @@ export function JournalPage() {
     day: 'numeric',
     year: 'numeric',
   });
+
+  /* ─── Render helpers ───────────────────────────────────── */
+  const renderEntryCard = (entry: JournalEntry) => {
+    const mood = getMoodFromEntry(entry);
+    return (
+      <div
+        key={entry.id}
+        className="journal-entry-card"
+        onClick={() => goToDetail(entry)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && goToDetail(entry)}
+        aria-label={`Open journal entry: ${entry.title || 'Untitled'}`}
+      >
+        {/* Mood emoji */}
+        <div className="journal-card-mood">
+          {mood?.emoji || '📝'}
+        </div>
+
+        {/* Body */}
+        <div className="journal-card-body">
+          <div className="journal-card-meta">
+            <span className="journal-date">{formatShortDate(entry.entry_date)}</span>
+            {mood?.label && (
+              <span className="journal-mood-label">{mood.label}</span>
+            )}
+          </div>
+          {entry.title && (
+            <h3 className="journal-title">{entry.title}</h3>
+          )}
+          {entry.content && (
+            <p className="journal-preview">{entry.content}</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignSelf: 'flex-start' }}>
+          <button
+            className="btn-icon"
+            onClick={(e) => { e.stopPropagation(); goToEdit(entry); }}
+            aria-label="Edit"
+            title="Edit"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            className="btn-icon"
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(entry); }}
+            aria-label="Delete"
+            title="Delete"
+            style={{ color: 'var(--error)' }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) return <LoadingState />;
 
@@ -373,10 +492,11 @@ export function JournalPage() {
      ═══════════════════════════════════════════════════════════ */
   if (pageView === 'detail' && viewEntry) {
     const mood = getMoodFromEntry(viewEntry);
+    const backFromDetail = selectedDateEntries.length > 0 ? goBackToDate : goBack;
     return (
       <div className="journal-detail">
         <div className="journal-detail-nav">
-          <button className="btn btn-ghost btn-sm" onClick={goBack}>
+          <button className="btn btn-ghost btn-sm" onClick={backFromDetail}>
             ← Back
           </button>
           <div className="journal-detail-actions">
@@ -458,6 +578,74 @@ export function JournalPage() {
   }
 
   /* ═══════════════════════════════════════════════════════════
+     DATE ENTRIES — All entries for a selected calendar date
+     ═══════════════════════════════════════════════════════════ */
+  if (pageView === 'date-entries') {
+    return (
+      <div style={{ animation: 'fadeIn 0.2s ease', maxWidth: 680 }}>
+        {/* Header */}
+        <div className="journal-detail-nav" style={{ marginBottom: '1.25rem' }}>
+          <button className="btn btn-ghost btn-sm" onClick={goBack}>
+            ← Back
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={goToNew}>
+            <Plus size={14} /> New Entry
+          </button>
+        </div>
+
+        <div style={{ marginBottom: '1.25rem' }}>
+          <h1
+            style={{
+              fontFamily: 'Lora, serif',
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              color: 'var(--primary)',
+              margin: 0,
+            }}
+          >
+            📅 {selectedDateLabel}
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+            {selectedDateEntries.length} {selectedDateEntries.length === 1 ? 'entry' : 'entries'} on this day
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {selectedDateEntries.map(renderEntryCard)}
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteTarget && (
+          <Modal title="Delete Entry" onClose={() => setDeleteTarget(null)}>
+            <div className="journal-delete-warning">
+              <div className="delete-emoji">🗑️</div>
+              <p>
+                Are you sure you want to delete this journal entry?
+                {deleteTarget.title && (
+                  <>
+                    <br />
+                    <strong>"{deleteTarget.title}"</strong>
+                  </>
+                )}
+                <br />
+                <span style={{ fontSize: '0.8rem' }}>This cannot be undone.</span>
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                {saving ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════
      LIST / CALENDAR — Main journal view
      ═══════════════════════════════════════════════════════════ */
   const renderCalendar = () => {
@@ -493,14 +681,16 @@ export function JournalPage() {
           {days.map((date, index) => {
             if (!date) return <div key={`empty-${index}`} style={{ aspectRatio: 1 }} />;
 
-            const entry = getEntryForDate(date);
-            const hasEntry = !!entry;
+            const dateEntries = getEntriesForDate(date);
+            const hasEntries = dateEntries.length > 0;
             const isToday = date.toDateString() === new Date().toDateString();
-            const mood = entry ? getMoodFromEntry(entry) : null;
+            // Show mood from the first entry; if multiple, show a stack indicator
+            const firstMood = dateEntries.length > 0 ? getMoodFromEntry(dateEntries[0]) : null;
+            const hasMultiple = dateEntries.length > 1;
 
             const classes = [
               'journal-cal-cell',
-              hasEntry ? 'has-entry' : '',
+              hasEntries ? 'has-entry' : '',
               isToday ? 'is-today' : '',
             ].filter(Boolean).join(' ');
 
@@ -508,76 +698,43 @@ export function JournalPage() {
               <button
                 key={date.toISOString()}
                 className={classes}
-                onClick={() => entry && goToDetail(entry)}
-                disabled={!hasEntry}
+                onClick={() => goToDateEntries(date)}
+                disabled={!hasEntries}
                 style={{
                   fontWeight: isToday ? 700 : 400,
+                  position: 'relative',
                 }}
               >
                 {date.getDate()}
-                {mood && (
-                  <span className="cal-mood-dot">{mood.emoji}</span>
+                {firstMood && (
+                  <span className="cal-mood-dot">{firstMood.emoji}</span>
+                )}
+                {hasMultiple && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      fontSize: '0.55rem',
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                    title={`${dateEntries.length} entries`}
+                  >
+                    {dateEntries.length}
+                  </span>
                 )}
               </button>
             );
           })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderEntryCard = (entry: JournalEntry) => {
-    const mood = getMoodFromEntry(entry);
-    return (
-      <div
-        key={entry.id}
-        className="journal-entry-card"
-        onClick={() => goToDetail(entry)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && goToDetail(entry)}
-        aria-label={`Open journal entry: ${entry.title || 'Untitled'}`}
-      >
-        {/* Mood emoji */}
-        <div className="journal-card-mood">
-          {mood?.emoji || '📝'}
-        </div>
-
-        {/* Body */}
-        <div className="journal-card-body">
-          <div className="journal-card-meta">
-            <span className="journal-date">{formatShortDate(entry.entry_date)}</span>
-            {mood?.label && (
-              <span className="journal-mood-label">{mood.label}</span>
-            )}
-          </div>
-          {entry.title && (
-            <h3 className="journal-title">{entry.title}</h3>
-          )}
-          {entry.content && (
-            <p className="journal-preview">{entry.content}</p>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignSelf: 'flex-start' }}>
-          <button
-            className="btn-icon"
-            onClick={(e) => { e.stopPropagation(); goToEdit(entry); }}
-            aria-label="Edit"
-            title="Edit"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            className="btn-icon"
-            onClick={(e) => { e.stopPropagation(); setDeleteTarget(entry); }}
-            aria-label="Delete"
-            title="Delete"
-            style={{ color: 'var(--error)' }}
-          >
-            <Trash2 size={14} />
-          </button>
         </div>
       </div>
     );
