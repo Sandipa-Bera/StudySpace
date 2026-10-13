@@ -69,6 +69,9 @@ function AppRoutes() {
       <Route path="/scratchpad" element={<ProtectedRoute><ScratchpadPage /></ProtectedRoute>} />
       <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
       <Route path="/pandora-timer" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
+      <Route path="/pomodoro" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
+      <Route path="/timer" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
+      <Route path="/focus" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
       {/* Fallback */}

@@ -1,85 +1,37 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Play,
   Pause,
   RotateCcw,
+  SkipForward,
   BellOff,
-  Coffee,
   Brain,
+  Coffee,
+  Sparkles,
+  Settings,
+  Bell,
+  Sprout,
+  BarChart3,
+  Flame,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { subjectsService } from '../services/subjects.service';
 import { chaptersService } from '../services/chapters.service';
 import { topicsService } from '../services/topics.service';
+import { focusSessionsService, type FocusStats } from '../services/focusSessions.service';
+import { FocusGarden } from '../components/ui/FocusGarden';
+import { TimerDisplay } from '../components/pomodoro/TimerDisplay';
+import { PomodoroSettingsModal } from '../components/pomodoro/PomodoroSettingsModal';
+import { ResetConfirmModal } from '../components/pomodoro/ResetConfirmModal';
+import { PomodoroHistory } from '../components/pomodoro/PomodoroHistory';
+import { usePomodoroTimer } from '../hooks/usePomodoroTimer';
 import type { Subject, Chapter, Topic } from '../types';
 
-// ─── Quick-pick durations ─────────────────────────────────
-const QUICK_PICKS = [
-  { label: '5m', minutes: 5 },
-  { label: '10m', minutes: 10 },
-  { label: '15m', minutes: 15 },
-  { label: '25m', minutes: 25 },
-  { label: '30m', minutes: 30 },
-  { label: '45m', minutes: 45 },
-  { label: '60m', minutes: 60 },
-];
-
-type TimerStatus = 'idle' | 'running' | 'paused' | 'done';
-type TimerMode = 'focus' | 'break';
-
-// ─── Web Audio beep generator ─────────────────────────────
-function createBeepLoop(audioCtx: AudioContext): { start: () => void; stop: () => void } {
-  let intervalId: ReturnType<typeof setInterval> | null = null;
-  let currentOsc: OscillatorNode | null = null;
-
-  const beepOnce = () => {
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.3);
-      currentOsc = osc;
-    } catch {
-      // Audio context may be closed
-    }
-  };
-
-  return {
-    start: () => {
-      beepOnce();
-      intervalId = setInterval(beepOnce, 700);
-    },
-    stop: () => {
-      if (intervalId) clearInterval(intervalId);
-      intervalId = null;
-      if (currentOsc) {
-        try { currentOsc.stop(); } catch { /* already stopped */ }
-        currentOsc = null;
-      }
-    },
-  };
-}
-
-// ─── Utility: format seconds to MM:SS ─────────────────────
-function formatTime(totalSeconds: number): string {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-// ═══════════════════════════════════════════════════════════
-// Component
-// ═══════════════════════════════════════════════════════════
 export function PandoraTimerPage() {
   const { user } = useAuth();
 
-  // ─── Data state ─────────────────────────────────────────
+  // ─── Curriculum Selection (Optional context for focus) ───
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -88,420 +40,502 @@ export function PandoraTimerPage() {
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState('');
 
-  // ─── Timer state ────────────────────────────────────────
-  const [mode, setMode] = useState<TimerMode>('focus');
-  const [durationMinutes, setDurationMinutes] = useState(25); // 25 min default
-  const [remaining, setRemaining] = useState(25 * 60); // in seconds internally
-  const [status, setStatus] = useState<TimerStatus>('idle');
+  // ─── Active Dashboard Tab (History vs Garden) ────────────
+  const [activeTab, setActiveTab] = useState<'analytics' | 'garden'>('analytics');
 
-  // Absolute end-time ref (for sleep/background reliability)
-  const endTimeRef = useRef<number>(0);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ─── Modal States ─────────────────────────────────────────
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
-  // ─── Audio refs ─────────────────────────────────────────
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const beepRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+  // ─── Focus Garden Compatibility ───────────────────────────
+  const [gardenStats, setGardenStats] = useState<FocusStats | null>(null);
+  const [gardenLoading, setGardenLoading] = useState(false);
+  const [justCompletedGarden, setJustCompletedGarden] = useState(false);
+  const [prevTotalSeconds, setPrevTotalSeconds] = useState(0);
 
-  // ─── Title flash ref ────────────────────────────────────
-  const originalTitleRef = useRef(document.title);
-  const titleFlashRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ─── Format Today's Date ──────────────────────────────────
+  const todayFormatted = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date());
 
-  // ─── Notification permission ────────────────────────────
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
-    typeof Notification !== 'undefined' ? Notification.permission : 'default'
-  );
-
-  // ─── Derived: duration in seconds ───────────────────────
-  const durationSeconds = durationMinutes * 60;
-
-  // ─── Load subjects ─────────────────────────────────────
+  // ─── Load Subjects ───────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     subjectsService.getAll(user.id).then(setSubjects).catch(console.error);
   }, [user]);
 
-  // ─── Load chapters when subject changes ────────────────
-  useEffect(() => {
-    if (!selectedSubjectId) { setChapters([]); setSelectedChapterId(''); return; }
-    chaptersService.getBySubject(selectedSubjectId).then(setChapters).catch(console.error);
+  const handleSubjectChange = (subjectId: string) => {
+    setSelectedSubjectId(subjectId);
     setSelectedChapterId('');
     setSelectedTopicId('');
-  }, [selectedSubjectId]);
-
-  // ─── Load topics when chapter changes ──────────────────
-  useEffect(() => {
-    if (!selectedChapterId) { setTopics([]); setSelectedTopicId(''); return; }
-    topicsService.getByChapter(selectedChapterId).then(setTopics).catch(console.error);
-    setSelectedTopicId('');
-  }, [selectedChapterId]);
-
-  // ─── Resolve names for display ──────────────────────────
-  const selectedChapterName = chapters.find(c => c.id === selectedChapterId)?.name;
-  const selectedTopicName = topics.find(t => t.id === selectedTopicId)?.name;
-
-  // ─── Timer completion handler ───────────────────────────
-  const handleTimerComplete = useCallback(() => {
-    setStatus('done');
-    setRemaining(0);
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-
-    // Beep alarm
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
-    }
-    const beep = createBeepLoop(audioCtxRef.current);
-    beepRef.current = beep;
-    beep.start();
-
-    // Browser notification
-    if (Notification.permission === 'granted') {
-      try {
-        new Notification('⏰ Pandora Timer Complete!', {
-          body: selectedTopicName
-            ? `Time to review: ${selectedTopicName}`
-            : mode === 'focus' ? 'Focus session complete!' : 'Break is over!',
-          icon: '/favicon.ico',
-          requireInteraction: true,
-        });
-      } catch { /* notification not supported in some contexts */ }
-    }
-
-    // Title flash
-    originalTitleRef.current = document.title;
-    let flip = false;
-    titleFlashRef.current = setInterval(() => {
-      flip = !flip;
-      document.title = flip ? '⏰ Timer Done!' : originalTitleRef.current;
-    }, 800);
-  }, [mode, selectedTopicName]);
-
-  // ─── Timer tick (absolute-time based) ───────────────────
-  useEffect(() => {
-    if (status !== 'running') return;
-
-    const tick = () => {
-      const now = Date.now();
-      const left = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
-      setRemaining(left);
-      if (left <= 0) {
-        handleTimerComplete();
-      }
-    };
-
-    // Tick immediately, then every 250ms (fast enough for display, resilient to throttling)
-    tick();
-    tickRef.current = setInterval(tick, 250);
-
-    return () => {
-      if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    };
-  }, [status, handleTimerComplete]);
-
-  // ─── Cleanup on unmount ─────────────────────────────────
-  useEffect(() => {
-    return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-      if (beepRef.current) beepRef.current.stop();
-      if (titleFlashRef.current) {
-        clearInterval(titleFlashRef.current);
-        document.title = originalTitleRef.current;
-      }
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
-      }
-    };
-  }, []);
-
-  // ─── Controls ───────────────────────────────────────────
-  const handleStart = () => {
-    if (durationSeconds <= 0) return;
-
-    // Initialize audio context on user gesture (required by browsers)
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
-    }
-
-    if (status === 'paused') {
-      // Resume from paused — set new end time based on remaining
-      endTimeRef.current = Date.now() + remaining * 1000;
+    if (subjectId) {
+      chaptersService.getBySubject(subjectId).then(setChapters).catch(console.error);
     } else {
-      // Fresh start
-      setRemaining(durationSeconds);
-      endTimeRef.current = Date.now() + durationSeconds * 1000;
+      setChapters([]);
+      setTopics([]);
     }
-    setStatus('running');
   };
 
-  const handlePause = () => {
-    setStatus('paused');
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-  };
-
-  const handleReset = () => {
-    setStatus('idle');
-    setRemaining(durationSeconds);
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-  };
-
-  const handleStopAlarm = () => {
-    if (beepRef.current) { beepRef.current.stop(); beepRef.current = null; }
-    if (titleFlashRef.current) {
-      clearInterval(titleFlashRef.current);
-      titleFlashRef.current = null;
-      document.title = originalTitleRef.current;
+  const handleChapterChange = (chapterId: string) => {
+    setSelectedChapterId(chapterId);
+    setSelectedTopicId('');
+    if (chapterId) {
+      topicsService.getByChapter(chapterId).then(setTopics).catch(console.error);
+    } else {
+      setTopics([]);
     }
-    setStatus('idle');
-    setRemaining(durationSeconds);
   };
 
-  const handleDurationChange = (mins: number) => {
-    if (status === 'running' || status === 'paused') return;
-    setDurationMinutes(mins);
-    setRemaining(mins * 60);
-  };
+  // ─── Refresh Focus Garden stats ──────────────────────────
+  const refreshGardenStats = useCallback(async () => {
+    if (!user) return;
+    try {
+      setGardenLoading(true);
+      const stats = await focusSessionsService.getFocusStats(user.id);
+      setGardenStats(stats);
+      setPrevTotalSeconds(stats.total_seconds);
+    } catch (err) {
+      console.warn('Failed to refresh garden stats:', err);
+    } finally {
+      setGardenLoading(false);
+    }
+  }, [user]);
 
-  const requestNotifPermission = async () => {
-    if (typeof Notification === 'undefined') return;
-    const perm = await Notification.requestPermission();
-    setNotifPermission(perm);
-  };
+  useEffect(() => {
+    if (user && activeTab === 'garden') {
+      refreshGardenStats();
+    }
+  }, [user, activeTab, refreshGardenStats]);
 
-  // ─── SVG ring calculations ─────────────────────────────
-  const radius = 118;
-  const circumference = 2 * Math.PI * radius;
-  const progress = durationSeconds > 0 ? remaining / durationSeconds : 1;
-  const dashOffset = circumference * (1 - progress);
+  // Selected names for target pill
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
+  const selectedChapter = chapters.find((c) => c.id === selectedChapterId);
+  const selectedTopic = topics.find((t) => t.id === selectedTopicId);
 
-  // ─── Render ─────────────────────────────────────────────
+  // ─── Pomodoro Timer Hook ─────────────────────────────────
+  const {
+    phase,
+    status,
+    cycleNumber,
+    remainingSeconds,
+    plannedDurationSeconds,
+    settings,
+    isConfirmingReset,
+    notifPermission,
+    nextPhase,
+    handleStart,
+    handlePause,
+    handleResume,
+    requestReset,
+    confirmReset,
+    cancelReset,
+    handleSkipPhase,
+    stopAlarm,
+    selectPhase,
+    updateSettings,
+    requestNotification,
+  } = usePomodoroTimer({
+    userId: user?.id,
+    selectedSubjectId: selectedSubjectId || undefined,
+    selectedChapterId: selectedChapterId || undefined,
+    selectedTopicId: selectedTopicId || undefined,
+    topicName: selectedTopic?.name || selectedChapter?.name,
+    onSessionSaved: () => {
+      setHistoryRefreshTrigger((prev) => prev + 1);
+      refreshGardenStats();
+      setJustCompletedGarden(true);
+    },
+  });
+
+  // ─── Keyboard Hotkeys (Space for Play/Pause, Esc to dismiss modal) ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept hotkeys if user is in an input or select
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (status === 'alarm') {
+          stopAlarm();
+        } else if (status === 'running') {
+          handlePause();
+        } else if (status === 'paused') {
+          handleResume();
+        } else if (status === 'idle') {
+          handleStart();
+        }
+      } else if (e.code === 'Escape') {
+        if (isConfirmingReset) {
+          cancelReset();
+        } else if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [status, isConfirmingReset, isSettingsOpen, handleStart, handlePause, handleResume, stopAlarm, cancelReset]);
+
+  const nextPhaseDurationMinutes =
+    nextPhase === 'focus'
+      ? settings.focusDurationMinutes
+      : nextPhase === 'short_break'
+      ? settings.shortBreakDurationMinutes
+      : settings.longBreakDurationMinutes;
+
+  const accumulatedMinutes = Math.max(
+    0,
+    Math.floor((plannedDurationSeconds - remainingSeconds) / 60)
+  );
+
   return (
-    <div className="pandora-timer-page">
-      {/* Header */}
-      <div className="pandora-timer-header">
-        <h1 className="page-title">
-          <span>Pandora</span> Timer
-        </h1>
-        <p className="page-subtitle">Focus deeply, break wisely</p>
+    <div className="pomo-dashboard-page">
+      {/* ── Dashboard Header ── */}
+      <div className="pomo-dashboard-header">
+        <div className="pomo-header-left">
+          <div className="pomo-date-pill">
+            <Calendar className="w-3.5 h-3.5 text-secondary" />
+            <span>{todayFormatted}</span>
+          </div>
+          <h1 className="pomo-main-title">
+            <span>Focus</span> Command Center
+          </h1>
+          <p className="pomo-header-subtitle">
+            Reliable time tracking, balanced breaks, and real-time productivity analytics
+          </p>
+        </div>
+
+        <div className="pomo-header-actions">
+          {notifPermission === 'default' && (
+            <button
+              className="pomo-settings-trigger-btn pomo-notif-cta"
+              onClick={requestNotification}
+              title="Enable desktop notifications"
+              aria-label="Allow desktop notifications"
+            >
+              <Bell className="w-4 h-4 text-amber-500 animate-pulse" />
+              <span>Allow Notifications</span>
+            </button>
+          )}
+
+          <button
+            className="pomo-settings-trigger-btn"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="Open timer settings"
+          >
+            <Settings className="w-4 h-4" />
+            <span>Preferences</span>
+          </button>
+        </div>
       </div>
 
-      {/* Mode Toggle */}
-      <div className="pandora-mode-toggle">
-        <button
-          className={`pandora-mode-btn ${mode === 'focus' ? 'active-focus' : ''}`}
-          onClick={() => { if (status === 'idle') setMode('focus'); }}
-        >
-          <Brain style={{ width: 14, height: 14, marginRight: 4, verticalAlign: 'middle' }} />
-          Focus
-        </button>
-        <button
-          className={`pandora-mode-btn ${mode === 'break' ? 'active-break' : ''}`}
-          onClick={() => { if (status === 'idle') setMode('break'); }}
-        >
-          <Coffee style={{ width: 14, height: 14, marginRight: 4, verticalAlign: 'middle' }} />
-          Break
-        </button>
+      {/* ── Mode Selector Tabs (Focus / Short Break / Long Break) ── */}
+      <div className="pomo-mode-selector-wrap">
+        <div className="pomo-mode-selector" role="tablist" aria-label="Pomodoro Phase Modes">
+          <button
+            role="tab"
+            aria-selected={phase === 'focus'}
+            className={`pomo-mode-tab ${phase === 'focus' ? 'active-focus' : ''}`}
+            onClick={() => selectPhase('focus')}
+            disabled={status !== 'idle'}
+          >
+            <Brain className="w-4 h-4" />
+            <span>Focus ({settings.focusDurationMinutes}m)</span>
+          </button>
+
+          <button
+            role="tab"
+            aria-selected={phase === 'short_break'}
+            className={`pomo-mode-tab ${
+              phase === 'short_break' ? 'active-short-break' : ''
+            }`}
+            onClick={() => selectPhase('short_break')}
+            disabled={status !== 'idle'}
+          >
+            <Coffee className="w-4 h-4" />
+            <span>Short Break ({settings.shortBreakDurationMinutes}m)</span>
+          </button>
+
+          <button
+            role="tab"
+            aria-selected={phase === 'long_break'}
+            className={`pomo-mode-tab ${
+              phase === 'long_break' ? 'active-long-break' : ''
+            }`}
+            onClick={() => selectPhase('long_break')}
+            disabled={status !== 'idle'}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Long Break ({settings.longBreakDurationMinutes}m)</span>
+          </button>
+        </div>
       </div>
 
-      {/* Setup Card */}
+      {/* ── Alarm Ringing Notification Banner ── */}
+      {status === 'alarm' && (
+        <div className="pomo-alarm-banner" role="alert">
+          <div className="pomo-alarm-banner-left">
+            <span className="pomo-alarm-banner-icon" aria-hidden="true">🔔</span>
+            <div>
+              <h3 className="pomo-alarm-banner-title">
+                {phase === 'focus'
+                  ? 'Focus Countdown Complete! Take a well-deserved break.'
+                  : 'Break Time is over! Ready to return to studying?'}
+              </h3>
+              <p className="pomo-alarm-banner-desc">
+                Alarm is repeating continuously. Click below or press Space to stop it.
+              </p>
+            </div>
+          </div>
+          <button
+            className="pomo-main-action-btn btn-alarm"
+            onClick={stopAlarm}
+            autoFocus
+          >
+            <BellOff className="w-4 h-4" /> Stop Alarm
+          </button>
+        </div>
+      )}
+
+      {/* ── Optional Curriculum Linking (Subject/Chapter/Topic) ── */}
       {status === 'idle' && (
-        <div className="pandora-setup-card">
-          {/* Subject & Chapter */}
-          <div className="pandora-setup-row">
-            <div className="form-group">
-              <label className="form-label">Subject</label>
+        <div className="pomo-curriculum-panel">
+          <div className="pomo-curriculum-grid">
+            <div className="pomo-curriculum-field">
+              <label htmlFor="pomo-select-subject">Link Subject (Optional)</label>
               <select
-                className="form-select"
+                id="pomo-select-subject"
+                className="pomo-curriculum-select"
                 value={selectedSubjectId}
-                onChange={e => setSelectedSubjectId(e.target.value)}
+                onChange={(e) => handleSubjectChange(e.target.value)}
               >
-                <option value="">— Select subject —</option>
-                {subjects.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                <option value="">— No Subject —</option>
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label">Chapter</label>
+
+            <div className="pomo-curriculum-field">
+              <label htmlFor="pomo-select-chapter">Chapter</label>
               <select
-                className="form-select"
+                id="pomo-select-chapter"
+                className="pomo-curriculum-select"
                 value={selectedChapterId}
-                onChange={e => setSelectedChapterId(e.target.value)}
+                onChange={(e) => handleChapterChange(e.target.value)}
                 disabled={!selectedSubjectId}
               >
-                <option value="">— Select chapter —</option>
-                {chapters.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                <option value="">— Select Chapter —</option>
+                {chapters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Topic */}
-          <div className="form-group">
-            <label className="form-label">Topic (optional)</label>
-            <select
-              className="form-select"
-              value={selectedTopicId}
-              onChange={e => setSelectedTopicId(e.target.value)}
-              disabled={!selectedChapterId}
-            >
-              <option value="">— Select topic —</option>
-              {topics.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Duration */}
-          <div className="form-group pandora-duration-section">
-            <label className="form-label">Duration</label>
-            <div className="pandora-duration-input-row">
-              <input
-                type="number"
-                className="form-input"
-                min={1}
-                max={1440}
-                value={durationMinutes}
-                onChange={e => handleDurationChange(Math.max(1, parseInt(e.target.value) || 0))}
-              />
-              <span className="pandora-duration-unit">minutes</span>
-            </div>
-            <div className="pandora-quick-picks">
-              {QUICK_PICKS.map(qp => (
-                <button
-                  key={qp.minutes}
-                  className={`pandora-quick-btn ${durationMinutes === qp.minutes ? 'selected' : ''}`}
-                  onClick={() => handleDurationChange(qp.minutes)}
-                >
-                  {qp.label}
-                </button>
-              ))}
+            <div className="pomo-curriculum-field">
+              <label htmlFor="pomo-select-topic">Topic</label>
+              <select
+                id="pomo-select-topic"
+                className="pomo-curriculum-select"
+                value={selectedTopicId}
+                onChange={(e) => setSelectedTopicId(e.target.value)}
+                disabled={!selectedChapterId}
+              >
+                <option value="">— Select Topic —</option>
+                {topics.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
       )}
 
-      {/* Timer Display */}
-      <div className="pandora-timer-display">
-        <div className="pandora-timer-ring-wrap">
-          <svg className="pandora-timer-svg" viewBox="0 0 260 260">
-            <defs>
-              <linearGradient id="pandora-gradient-focus" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#6366f1" />
-                <stop offset="100%" stopColor="#8b5cf6" />
-              </linearGradient>
-              <linearGradient id="pandora-gradient-break" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#14b8a6" />
-              </linearGradient>
-            </defs>
-            <circle
-              className="pandora-timer-track"
-              cx="130"
-              cy="130"
-              r={radius}
-            />
-            <circle
-              className={`pandora-timer-progress ${mode === 'focus' ? 'focus-mode' : 'break-mode'}`}
-              cx="130"
-              cy="130"
-              r={radius}
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          </svg>
+      {/* ── Main Circular Timer Display ── */}
+      <TimerDisplay
+        phase={phase}
+        status={status}
+        remainingSeconds={remainingSeconds}
+        totalDurationSeconds={plannedDurationSeconds}
+        cycleNumber={cycleNumber}
+        maxCycle={settings.longBreakInterval}
+        nextPhase={nextPhase}
+        nextDurationMinutes={nextPhaseDurationMinutes}
+        subjectName={selectedSubject?.name}
+        chapterName={selectedChapter?.name}
+        topicName={selectedTopic?.name}
+      />
 
-          <div className="pandora-timer-center">
-            <div className="pandora-timer-time">{formatTime(remaining)}</div>
-            <div className="pandora-timer-label">
-              {status === 'idle' && (mode === 'focus' ? 'Ready to focus' : 'Ready to break')}
-              {status === 'running' && (mode === 'focus' ? 'Focusing…' : 'On break…')}
-              {status === 'paused' && 'Paused'}
-              {status === 'done' && 'Complete!'}
-            </div>
-          </div>
-        </div>
-
-        {(selectedChapterName || selectedTopicName) && (
-          <div className="pandora-timer-target">
-            {selectedChapterName && <>📖 {selectedChapterName}</>}
-            {selectedTopicName && <> · {selectedTopicName}</>}
-          </div>
-        )}
-      </div>
-
-      {/* Controls */}
-      <div className="pandora-controls">
+      {/* ── Timer Controls ── */}
+      <div className="pomo-controls-container">
         {status === 'idle' && (
           <button
-            className={`pandora-ctrl-btn start ${mode === 'break' ? 'break-active' : ''}`}
+            className={`pomo-main-action-btn ${
+              phase === 'focus' ? 'btn-focus' : 'btn-break'
+            }`}
             onClick={handleStart}
-            disabled={durationSeconds <= 0}
+            title="Press Space to start"
+            aria-label={phase === 'focus' ? 'Start Focus' : 'Start Break'}
           >
-            <Play /> Start
+            <Play className="w-5 h-5 fill-current" />
+            <span>
+              {phase === 'focus' ? 'Start Focus' : 'Start Break'}
+            </span>
           </button>
         )}
 
         {status === 'running' && (
-          <button className="pandora-ctrl-btn pause" onClick={handlePause}>
-            <Pause /> Pause
-          </button>
+          <>
+            <button
+              className="pomo-sub-action-btn btn-pause"
+              onClick={handlePause}
+              title="Pause Timer (Space)"
+              aria-label="Pause Timer"
+            >
+              <Pause className="w-4 h-4" /> Pause
+            </button>
+            <button
+              className="pomo-sub-action-btn"
+              onClick={requestReset}
+              title="Reset Timer"
+              aria-label="Reset Timer"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset
+            </button>
+            <button
+              className="pomo-sub-action-btn"
+              onClick={handleSkipPhase}
+              title="Skip to next phase"
+              aria-label="Skip to next phase"
+            >
+              <SkipForward className="w-4 h-4" /> Skip
+            </button>
+          </>
         )}
 
         {status === 'paused' && (
           <>
             <button
-              className={`pandora-ctrl-btn start ${mode === 'break' ? 'break-active' : ''}`}
-              onClick={handleStart}
+              className={`pomo-main-action-btn ${
+                phase === 'focus' ? 'btn-focus' : 'btn-break'
+              }`}
+              onClick={handleResume}
+              title="Resume Timer (Space)"
+              aria-label="Resume Timer"
             >
-              <Play /> Resume
+              <Play className="w-5 h-5 fill-current" /> Resume
             </button>
-            <button className="pandora-ctrl-btn reset" onClick={handleReset}>
-              <RotateCcw /> Reset
+            <button
+              className="pomo-sub-action-btn"
+              onClick={requestReset}
+              aria-label="Reset Timer"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset
+            </button>
+            <button
+              className="pomo-sub-action-btn"
+              onClick={handleSkipPhase}
+              aria-label="Skip Phase"
+            >
+              <SkipForward className="w-4 h-4" /> Skip
             </button>
           </>
         )}
 
-        {(status === 'running' || status === 'paused') && status !== 'paused' && (
-          <button className="pandora-ctrl-btn reset" onClick={handleReset}>
-            <RotateCcw /> Reset
+        {status === 'alarm' && (
+          <button
+            className="pomo-main-action-btn btn-alarm"
+            onClick={stopAlarm}
+            title="Stop Alarm (Space)"
+            aria-label="Stop Alarm"
+          >
+            <BellOff className="w-5 h-5" /> Stop Alarm & Continue
           </button>
         )}
       </div>
 
-      {/* Notification permission hint */}
-      {notifPermission === 'default' && status === 'idle' && (
-        <div className="pandora-notif-hint">
-          <button className="pandora-notif-btn" onClick={requestNotifPermission}>
-            🔔 Enable notifications to get alerted in other tabs
-          </button>
-        </div>
+      <div className="pomo-keyboard-hint">
+        <span>Keyboard shortcut: press <strong>Space</strong> to {status === 'running' ? 'pause' : status === 'paused' ? 'resume' : 'start'}</span>
+      </div>
+
+      {/* ── View Mode Switcher: Productivity History vs Focus Garden ── */}
+      <div className="flex items-center justify-center gap-2 mb-6 mt-8">
+        <button
+          className={`pomo-filter-btn px-4 py-2 text-sm flex items-center gap-1.5 ${
+            activeTab === 'analytics' ? 'active' : ''
+          }`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Productivity History & Stats</span>
+        </button>
+
+        <button
+          className={`pomo-filter-btn px-4 py-2 text-sm flex items-center gap-1.5 ${
+            activeTab === 'garden' ? 'active' : ''
+          }`}
+          onClick={() => setActiveTab('garden')}
+        >
+          <Sprout className="w-4 h-4 text-emerald-500" />
+          <span>Focus Garden Tree</span>
+        </button>
+      </div>
+
+      {/* ── Tab Content: History & Stats vs Focus Garden ── */}
+      {activeTab === 'analytics' ? (
+        user && (
+          <PomodoroHistory
+            userId={user.id}
+            refreshTrigger={historyRefreshTrigger}
+            onRefreshStats={refreshGardenStats}
+          />
+        )
+      ) : (
+        <FocusGarden
+          stats={gardenStats}
+          loading={gardenLoading}
+          justCompleted={justCompletedGarden}
+          prevTotalSeconds={prevTotalSeconds}
+          onJustCompletedDismiss={() => setJustCompletedGarden(false)}
+        />
       )}
 
-      {/* ─── Alarm Overlay ─────────────────────────────────── */}
-      {status === 'done' && (
-        <div className="pandora-alarm-overlay">
-          <div className="pandora-alarm-card">
-            <div className="pandora-alarm-icon">🔔</div>
-            <h2 className="pandora-alarm-title">
-              {mode === 'focus' ? 'Focus Session Complete!' : 'Break Time Over!'}
-            </h2>
-            <p className="pandora-alarm-message">
-              {mode === 'focus'
-                ? 'Great work! Your focus session has ended.'
-                : 'Time to get back to studying!'}
-            </p>
-            {(selectedChapterName || selectedTopicName) && (
-              <div className="pandora-alarm-topic">
-                {selectedChapterName && <>📖 {selectedChapterName}</>}
-                {selectedTopicName && <> · {selectedTopicName}</>}
-              </div>
-            )}
-            <button className="pandora-alarm-stop" onClick={handleStopAlarm}>
-              <BellOff /> Stop Alarm
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── Settings Modal ── */}
+      <PomodoroSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onSave={updateSettings}
+        notifPermission={notifPermission}
+        onRequestNotification={requestNotification}
+      />
+
+      {/* ── Confirmation Modal Before Discarding Active Session ── */}
+      <ResetConfirmModal
+        isOpen={isConfirmingReset}
+        onConfirm={confirmReset}
+        onCancel={cancelReset}
+        accumulatedMinutes={accumulatedMinutes}
+      />
     </div>
   );
 }
+
+export default PandoraTimerPage;

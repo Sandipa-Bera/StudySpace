@@ -2827,3 +2827,2247 @@ h1, h2, h3, h4, h5, h6 {
     height: 7px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   FOCUS GARDEN
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Section wrapper ─────────────────────────────────────── */
+.focus-garden-section {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ─── Section header ──────────────────────────────────────── */
+.fg-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.fg-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(20,184,166,0.15));
+  border: 1px solid rgba(16,185,129,0.25);
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.fg-title {
+  font-family: 'Lora', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.fg-subtitle {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─── Today's Progress Card ───────────────────────────────── */
+.fg-today-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.125rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.fg-today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+}
+
+.fg-today-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.fg-today-time {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+.fg-today-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.fg-today-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981, #6366f1);
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 0;
+}
+
+.fg-today-pct {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  text-align: right;
+}
+
+/* ─── Tree Display ────────────────────────────────────────── */
+.fg-tree-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(16,185,129,0.05));
+  border: 1px solid rgba(99,102,241,0.15);
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.fg-tree-emoji-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.fg-tree-emoji {
+  font-size: 5rem;
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 4px 24px rgba(16,185,129,0.2));
+  animation: fg-tree-breathe 4s ease-in-out infinite;
+  transition: font-size 0.5s ease;
+}
+
+@keyframes fg-tree-breathe {
+  0%, 100% { transform: scale(1) rotate(-1deg); }
+  50%       { transform: scale(1.04) rotate(1deg); }
+}
+
+/* Sparkles for max stage */
+.fg-tree-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fg-sparkle {
+  position: absolute;
+  font-size: 0.9rem;
+  transform: translate(var(--x), var(--y));
+  animation: fg-sparkle-float 2s ease-in-out var(--delay) infinite;
+}
+
+@keyframes fg-sparkle-float {
+  0%, 100% { opacity: 0.4; transform: translate(var(--x), var(--y)) scale(0.8); }
+  50%       { opacity: 1;   transform: translate(var(--x), calc(var(--y) - 8px)) scale(1.2); }
+}
+
+.fg-tree-stage-name {
+  font-family: 'Lora', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.fg-tree-description {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  max-width: 220px;
+}
+
+.fg-tree-total {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 1rem;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Progress to next stage */
+.fg-tree-progress-wrap {
+  width: 100%;
+  max-width: 240px;
+}
+
+.fg-tree-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.3rem;
+}
+
+.fg-tree-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #10b981);
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 0;
+}
+
+.fg-tree-progress-label {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.fg-tree-max-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 999px;
+  padding: 0.3rem 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* ─── Stats Grid ──────────────────────────────────────────── */
+.fg-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+.fg-stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fg-stat-card.accent {
+  border-color: rgba(16,185,129,0.4);
+  background: rgba(16,185,129,0.06);
+}
+
+.fg-stat-card:hover {
+  border-color: var(--accent);
+}
+
+.fg-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(99,102,241,0.1);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.fg-stat-card.accent .fg-stat-icon {
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+}
+
+.fg-stat-body {
+  min-width: 0;
+}
+
+.fg-stat-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fg-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+}
+
+.fg-stat-sub {
+  font-size: 0.65rem;
+  color: var(--text-light);
+}
+
+/* ─── Milestone Overlay ───────────────────────────────────── */
+.fg-milestone-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15,23,42,0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn 0.3s ease;
+}
+
+.fg-milestone-card {
+  text-align: center;
+  max-width: 340px;
+  width: 90%;
+  padding: 2.5rem 2rem;
+  background: var(--card-bg);
+  border: 1px solid rgba(16,185,129,0.35);
+  border-radius: 24px;
+  box-shadow:
+    0 0 50px rgba(16,185,129,0.15),
+    0 0 100px rgba(99,102,241,0.08);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fg-milestone-emoji {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  animation: fg-tree-breathe 2s ease-in-out infinite;
+}
+
+.fg-milestone-title {
+  font-family: 'Lora', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.25rem;
+}
+
+.fg-milestone-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #10b981;
+  margin: 0 0 0.5rem;
+}
+
+.fg-milestone-message {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.fg-milestone-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #10b981, #6366f1);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+  transition: all 0.2s ease;
+}
+
+.fg-milestone-btn:hover {
+  box-shadow: 0 6px 24px rgba(16,185,129,0.45);
+  transform: translateY(-1px);
+}
+
+/* ─── Session Complete Toast ──────────────────────────────── */
+.fg-session-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.35);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #10b981;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: slideUp 0.3s ease, fg-toast-out 0.3s 3.2s ease forwards;
+  white-space: nowrap;
+}
+
+.fg-session-toast-icon {
+  font-size: 1rem;
+}
+
+@keyframes fg-toast-out {
+  to { opacity: 0; transform: translateX(-50%) translateY(10px); }
+}
+
+/* ─── Loading Skeletons ───────────────────────────────────── */
+.fg-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    rgba(255,255,255,0.05) 50%,
+    var(--card-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: fg-shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+.fg-skeleton-tree {
+  height: 180px;
+  border-radius: 20px;
+}
+
+.fg-skeleton-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+.fg-skeleton-card {
+  height: 68px;
+}
+
+@keyframes fg-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .fg-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fg-tree-emoji {
+    font-size: 4rem;
+  }
+
+  .fg-stat-value {
+    font-size: 0.82rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   POMODORO PRODUCTIVITY DASHBOARD (MODERN FOCUS SYSTEM)
+   ══════════════════════════════════════════════════════════════ */
+
+.pomo-dashboard-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-bottom: 4rem;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ─── Dashboard Header ─── */
+.pomo-dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pomo-header-left .pomo-main-title {
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.pomo-header-left .pomo-main-title span {
+  background: linear-gradient(135deg, var(--accent), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pomo-header-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pomo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pomo-settings-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pomo-settings-trigger-btn:hover {
+  background: var(--border);
+  border-color: var(--text-light);
+}
+
+/* ─── Mode Selector Tabs ─── */
+.pomo-mode-selector-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+}
+
+.pomo-mode-selector {
+  display: inline-flex;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 5px;
+  border-radius: 14px;
+  gap: 4px;
+}
+
+.pomo-mode-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.pomo-mode-tab:hover {
+  color: var(--text);
+}
+
+.pomo-mode-tab.active-focus {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.pomo-mode-tab.active-short-break {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.pomo-mode-tab.active-long-break {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+/* ─── Curriculum Quick Selector ─── */
+.pomo-curriculum-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.pomo-curriculum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.875rem;
+}
+
+.pomo-curriculum-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.pomo-curriculum-select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.pomo-curriculum-select:focus {
+  border-color: var(--secondary);
+}
+
+/* ─── Circular Timer Dial ─── */
+.pomo-timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.25rem;
+}
+
+.pomo-cycle-indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--card-bg);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.pomo-cycle-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pomo-cycle-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomo-cycle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+
+.pomo-cycle-dot.completed {
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.pomo-cycle-dot.current {
+  background: var(--secondary);
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+.pomo-timer-dial {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pomo-dial-svg {
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.pomo-dial-track {
+  fill: none;
+  stroke: var(--border);
+  opacity: 0.6;
+}
+
+.pomo-dial-progress {
+  fill: none;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+.pomo-timer-dial.is-running .pomo-dial-progress {
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+}
+
+.pomo-timer-dial.is-alarm .pomo-dial-progress {
+  animation: pomoAlarmStroke 1s ease-in-out infinite alternate;
+}
+
+@keyframes pomoAlarmStroke {
+  0% { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4)); }
+  100% { filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.9)); }
+}
+
+.pomo-dial-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.pomo-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.pomo-badge-focus {
+  background: rgba(99, 102, 241, 0.15);
+  color: #8b5cf6;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.pomo-badge-short {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pomo-badge-long {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.pomo-time-number {
+  font-family: 'Inter', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.pomo-status-caption {
+  margin-top: 0.65rem;
+}
+
+.pomo-status-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.pomo-status-running {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.pomo-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  margin-right: 5px;
+  display: inline-block;
+  animation: pomoDotPulse 1.2s infinite;
+}
+
+@keyframes pomoDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.pomo-status-paused {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.pomo-status-alarm {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.pomo-status-idle {
+  color: var(--text-muted);
+}
+
+.pomo-target-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
+.pomo-target-sep {
+  opacity: 0.5;
+}
+
+.pomo-next-phase-hint {
+  font-size: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+/* ─── Controls ─── */
+.pomo-controls-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.pomo-main-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2.25rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.pomo-main-action-btn.btn-focus {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+
+.pomo-main-action-btn.btn-focus:hover {
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+.pomo-main-action-btn.btn-break {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+}
+
+.pomo-main-action-btn.btn-break:hover {
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.pomo-main-action-btn.btn-alarm {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45);
+  animation: pomoAlarmButtonPulse 1.5s infinite;
+}
+
+@keyframes pomoAlarmButtonPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45); }
+  50% { box-shadow: 0 6px 30px rgba(239, 68, 68, 0.7); }
+}
+
+.pomo-sub-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pomo-sub-action-btn:hover {
+  background: var(--border);
+  color: var(--text);
+  border-color: var(--text-light);
+}
+
+.pomo-sub-action-btn.btn-pause {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.pomo-sub-action-btn.btn-pause:hover {
+  background: rgba(245, 158, 11, 0.22);
+}
+
+/* ─── Alarm Banner (when alarm is ringing) ─── */
+.pomo-alarm-banner {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: slideUp 0.3s ease;
+}
+
+.pomo-alarm-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.pomo-alarm-banner-icon {
+  font-size: 2rem;
+  animation: pandoraBell 0.5s ease-in-out infinite alternate;
+}
+
+.pomo-alarm-banner-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin: 0;
+}
+
+.pomo-alarm-banner-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─── Metric Stat Cards ─── */
+.pomo-history-section {
+  margin-top: 3rem;
+  border-top: 1px solid var(--border);
+  padding-top: 2.5rem;
+}
+
+.pomo-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 1.75rem;
+}
+
+.pomo-stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.pomo-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--secondary);
+}
+
+.pomo-stat-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pomo-stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.pomo-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.pomo-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+/* ─── Daily Activity Bar Chart ─── */
+.pomo-chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.pomo-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pomo-chart-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+}
+
+.pomo-chart-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0.2rem 0 0 0;
+}
+
+.pomo-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pomo-bars-container {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.75rem;
+  height: 180px;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.pomo-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.pomo-bar-track {
+  width: 24px;
+  height: 140px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  justify-content: center;
+}
+
+.pomo-bar {
+  width: 10px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+}
+
+.pomo-bar-focus {
+  background: linear-gradient(180deg, #8b5cf6, #6366f1);
+}
+
+.pomo-bar-break {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.pomo-bar-day {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.pomo-bar-minutes {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  margin-top: 0.1rem;
+}
+
+/* ─── Sessions History List ─── */
+.pomo-sessions-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.pomo-sessions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pomo-sessions-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text);
+}
+
+.pomo-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--background);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.pomo-filter-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.pomo-filter-btn.active {
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pomo-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pomo-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  gap: 1rem;
+  transition: all 0.15s ease;
+}
+
+.pomo-session-row:hover {
+  border-color: var(--secondary);
+}
+
+.pomo-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 150px;
+}
+
+.pomo-row-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pomo-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pomo-cycle-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+.pomo-topic-badge {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pomo-row-center {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.pomo-dur-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.pomo-row-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pomo-status-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.pomo-status-pill.status-completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.pomo-status-pill.status-interrupted {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.pomo-status-pill.status-in-progress {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.pomo-row-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.pomo-row-delete-btn:hover {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.pomo-empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+
+.pomo-error-banner {
+  display: flex;
+  align-items: center;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+/* ─── Settings & Confirmation Modals ─── */
+.pomo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.pomo-modal-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+.pomo-confirm-card {
+  max-width: 420px;
+  text-align: center;
+  padding: 2rem 1.75rem;
+}
+
+.pomo-confirm-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.pomo-confirm-title {
+  font-family: 'Lora', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+
+.pomo-confirm-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+.pomo-confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pomo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pomo-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pomo-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.pomo-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.pomo-modal-close-btn:hover {
+  color: var(--text);
+}
+
+.pomo-modal-form {
+  padding: 1.5rem;
+}
+
+.pomo-settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.pomo-section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem 0;
+}
+
+.pomo-duration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.pomo-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pomo-input-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pomo-number-input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.pomo-number-input:focus {
+  border-color: var(--secondary);
+}
+
+.pomo-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.pomo-range-slider {
+  flex: 1;
+  accent-color: var(--secondary);
+}
+
+.pomo-volume-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 36px;
+  text-align: right;
+}
+
+.pomo-helper-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+.pomo-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pomo-toggle-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pomo-toggle-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pomo-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--secondary);
+  cursor: pointer;
+}
+
+.pomo-text-btn {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pomo-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1.5rem;
+}
+
+.pomo-btn-primary {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: #ffffff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pomo-btn-secondary {
+  padding: 0.6rem 1.15rem;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pomo-btn-subtle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.pomo-btn-danger {
+  padding: 0.6rem 1.15rem;
+  border-radius: 10px;
+  background: var(--error);
+  color: #ffffff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ─── Responsive Adjustments ─── */
+@media (max-width: 640px) {
+  .pomo-timer-dial {
+    width: 250px;
+    height: 250px;
+  }
+
+  .pomo-dial-svg {
+    width: 250px;
+    height: 250px;
+  }
+
+  .pomo-time-number {
+    font-size: 2.75rem;
+  }
+
+  .pomo-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pomo-session-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .pomo-row-center {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pomo-row-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ─── Header Date Pill & Notif CTA ─── */
+.pomo-date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.pomo-notif-cta {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.pomo-notif-cta:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+/* ─── Keyboard Hint ─── */
+.pomo-keyboard-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: -0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pomo-keyboard-hint strong {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  color: var(--text);
+  font-family: inherit;
+}
+
+/* ─── Tabular Numerals ─── */
+.pomo-time-number {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ─── Loading Skeletons ─── */
+.pomo-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.pomo-skeleton-row {
+  height: 58px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    var(--border) 50%,
+    var(--card-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: pomoShimmer 1.8s infinite;
+}
+
+@keyframes pomoShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Reduced Motion Accessibility ─── */
+@media (prefers-reduced-motion: reduce) {
+  .pomo-timer-dial.is-running .pomo-dial-progress,
+  .pomo-timer-dial.is-alarm .pomo-dial-progress,
+  .pomo-pulse-dot,
+  .pomo-skeleton-row,
+  .pomo-main-action-btn.btn-alarm,
+  .pomo-alarm-banner-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FOCUS GARDEN 2.0 — MULTI-PLANT SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.fg2-section {
+  padding-top: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ─── Stats ─── */
+/* Reuses existing .fg-stats-grid and .fg-stat-card from the original garden CSS */
+
+/* ─── Next Milestone Progress Bar ─── */
+.fg2-milestone-bar-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.fg2-milestone-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.fg2-milestone-bar-label {
+  color: var(--text-muted);
+}
+
+.fg2-milestone-bar-label strong {
+  color: var(--text);
+}
+
+.fg2-milestone-bar-pct {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.fg2-milestone-progress-track {
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fg2-milestone-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Stage Legend ─── */
+.fg2-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.fg2-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.fg2-legend-emoji {
+  font-size: 1rem;
+}
+
+.fg2-legend-label {
+  font-weight: 500;
+}
+
+.fg2-legend-item:not(:last-child)::after {
+  content: '→';
+  margin-left: 0.35rem;
+  color: var(--border);
+  font-size: 0.75rem;
+}
+
+/* ─── Garden Wrap ─── */
+.fg2-garden-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.fg2-garden-soil {
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.04) 0%,
+    rgba(16, 185, 129, 0.01) 100%
+  );
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  min-height: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fg2-garden-soil::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #6b4f3a 0%, #8b6340 50%, #6b4f3a 100%);
+  border-radius: 0 0 20px 20px;
+  opacity: 0.25;
+}
+
+/* ─── Pagination ─── */
+.fg2-garden-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fg2-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.fg2-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fg2-page-btn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.fg2-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fg2-page-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ─── Garden Grid ─── */
+.fg2-garden-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ─── Plant Slot ─── */
+.fg2-plant-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: 0.5rem 0.25rem 0.4rem;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.fg2-plant-slot:hover {
+  border-color: var(--border);
+  background: var(--card-bg);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.fg2-plant-slot.selected {
+  border-color: var(--secondary);
+  background: rgba(99, 102, 241, 0.07);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* ─── Stage-specific sizes (plant visual hierarchy) ─── */
+.fg2-plant-slot .fg2-plant-emoji {
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1;
+}
+
+.fg2-plant-seed    .fg2-plant-emoji { font-size: 1.1rem; }
+.fg2-plant-sprout  .fg2-plant-emoji { font-size: 1.3rem; }
+.fg2-plant-small   .fg2-plant-emoji { font-size: 1.6rem; }
+.fg2-plant-young   .fg2-plant-emoji { font-size: 1.9rem; }
+.fg2-plant-mature  .fg2-plant-emoji { font-size: 2.2rem; }
+.fg2-plant-flowering .fg2-plant-emoji {
+  font-size: 2.4rem;
+  animation: fg2-sway 4s ease-in-out infinite;
+}
+
+@keyframes fg2-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%       { transform: rotate(3deg);  }
+}
+
+/* ─── Stage progress pip dots ─── */
+.fg2-plant-stage-dot {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.fg2-stage-pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s ease;
+}
+
+.fg2-stage-pip.filled {
+  background: var(--secondary);
+}
+
+.fg2-plant-flowering .fg2-stage-pip.filled {
+  background: #f59e0b;
+}
+
+/* ─── Empty State ─── */
+.fg2-empty-garden {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.fg2-empty-emoji {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.fg2-empty-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.4rem;
+}
+
+.fg2-empty-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* ─── Plant Detail Card ─── */
+.fg2-plant-detail-card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  text-align: center;
+  animation: slideUp 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.fg2-plant-detail-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.fg2-plant-detail-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.fg2-plant-detail-emoji {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.fg2-plant-detail-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.3rem;
+}
+
+.fg2-plant-detail-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.fg2-plant-detail-stages {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.fg2-stage-dot-lg {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  opacity: 0.35;
+  transition: all 0.2s ease;
+}
+
+.fg2-stage-dot-lg.reached {
+  opacity: 0.75;
+  border-color: var(--secondary);
+}
+
+.fg2-stage-dot-lg.current {
+  opacity: 1;
+  border-color: var(--secondary);
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  transform: scale(1.15);
+}
+
+.fg2-plant-detail-progress {
+  margin-top: 0.75rem;
+}
+
+.fg2-plant-detail-progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+
+.fg2-plant-detail-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #6ee7b7);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.fg2-plant-detail-progress-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.fg2-plant-max-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+}
+
+/* ─── Celebration Overlay ─── */
+.fg2-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+  padding: 1rem;
+  animation: fadeIn 0.25s ease;
+}
+
+.fg2-celebration-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem 2rem 1.75rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fg2-celebration-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fg2-confetti-piece {
+  position: absolute;
+  font-size: 1.5rem;
+  animation: fg2-confetti-fall 3s ease-in forwards;
+  opacity: 0;
+  animation-delay: calc(var(--i) * 0.3s);
+  left: calc(10% + var(--i) * 15%);
+  top: -20px;
+}
+
+@keyframes fg2-confetti-fall {
+  0%   { transform: translateY(0) rotate(0deg);    opacity: 1; }
+  100% { transform: translateY(220px) rotate(360deg); opacity: 0; }
+}
+
+.fg2-celebration-message {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+  position: relative;
+}
+
+.fg2-celebration-btn {
+  padding: 0.65rem 1.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.fg2-celebration-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* ─── Guide Banner ─── */
+.fg2-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.fg2-guide-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.fg2-guide-text strong {
+  color: var(--text);
+}
+
+/* ─── Loading Skeleton ─── */
+.fg2-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fg2-skeleton-bar {
+  height: 64px;
+  border-radius: 14px;
+}
+
+.fg2-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.fg2-skeleton-plant {
+  height: 72px;
+  border-radius: 14px;
+}
+
+/* Reuse existing skeleton shimmer animation from .fg-skeleton */
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .fg2-garden-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .fg2-legend {
+    gap: 0.35rem;
+  }
+
+  .fg2-legend-label {
+    display: none;
+  }
+
+  .fg2-legend-item:not(:last-child)::after {
+    display: none;
+  }
+
+  .fg2-plant-detail-stages {
+    gap: 0.3rem;
+  }
+
+  .fg2-stage-dot-lg {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .fg2-plant-flowering .fg2-plant-emoji,
+  .fg2-confetti-piece,
+  .fg2-milestone-progress-fill,
+  .fg2-celebration-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
