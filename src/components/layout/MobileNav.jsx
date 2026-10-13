@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: LayoutDashboard },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/subjects', label: 'Subjects', icon: BookOpen },
-  { to: '/pandora-timer', label: 'Timer', icon: Timer },
+  { to: '/pomodoro', label: 'Pomodoro', icon: Timer },
   { to: '/journal', label: 'Journal', icon: BookMarked },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/settings', label: 'Settings', icon: Settings },

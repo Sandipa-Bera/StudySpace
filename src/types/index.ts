@@ -93,6 +93,19 @@ export interface StudySession {
   created_at: string;
 }
 
+export interface FocusSession {
+  id: string;
+  user_id: string;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+  duration_seconds: number | null;
+  status: 'in_progress' | 'completed' | 'cancelled';
+  subject_id: string | null;
+  chapter_id: string | null;
+  topic_id: string | null;
+}
+
 export interface ActivityLog {
   id: string;
   user_id: string;
@@ -177,3 +190,5 @@ export interface Scratchpad {
   content: string;
   updated_at: string;
 }
+
+export * from './pomodoro.types';
