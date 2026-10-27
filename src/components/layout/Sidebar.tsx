@@ -4,12 +4,10 @@ import {
   BookOpen,
   BookMarked,
   Search,
-  Star,
-  Sparkles,
-  Clock,
   Settings,
   LogOut,
   Timer,
+  Trophy,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -17,6 +15,7 @@ import { useToast } from '../../hooks/useToast';
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/subjects', label: 'Subjects', icon: BookOpen },
+  { to: '/ssc', label: 'SSC CGL Prep', icon: Trophy },
   { to: '/journal', label: 'Journal', icon: BookMarked },
   { to: '/pomodoro', label: 'Pomodoro Timer', icon: Timer },
   { to: '/search', label: 'Search', icon: Search },
