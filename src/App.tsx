@@ -19,6 +19,18 @@ import { ActivityPage } from './pages/ActivityPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PandoraTimerPage } from './pages/PandoraTimerPage';
 import { LoadingState } from './components/ui/LoadingState';
+// SSC CGL Pages
+import { SscDashboardPage } from './pages/ssc/SscDashboardPage';
+import { SscSyllabusPage } from './pages/ssc/SscSyllabusPage';
+import { SscSubjectPage } from './pages/ssc/SscSubjectPage';
+import { SscChapterDetailPage } from './pages/ssc/SscChapterDetailPage';
+import { SscPriorityPage } from './pages/ssc/SscPriorityPage';
+import { SscRevisionPage } from './pages/ssc/SscRevisionPage';
+import { SscPracticePage } from './pages/ssc/SscPracticePage';
+import { SscMockTestsPage } from './pages/ssc/SscMockTestsPage';
+import { SscCalendarPage } from './pages/ssc/SscCalendarPage';
+import { SscSettingsPage } from './pages/ssc/SscSettingsPage';
+
 
 // ─── Protected Route ───────────────────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -73,6 +85,18 @@ function AppRoutes() {
       <Route path="/timer" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
       <Route path="/focus" element={<ProtectedRoute><PandoraTimerPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+      {/* ── SSC CGL Prep routes ── */}
+      <Route path="/ssc" element={<ProtectedRoute><SscDashboardPage /></ProtectedRoute>} />
+      <Route path="/ssc/syllabus" element={<ProtectedRoute><SscSyllabusPage /></ProtectedRoute>} />
+      <Route path="/ssc/syllabus/:subjectSlug" element={<ProtectedRoute><SscSubjectPage /></ProtectedRoute>} />
+      <Route path="/ssc/chapters/:chapterId" element={<ProtectedRoute><SscChapterDetailPage /></ProtectedRoute>} />
+      <Route path="/ssc/priority" element={<ProtectedRoute><SscPriorityPage /></ProtectedRoute>} />
+      <Route path="/ssc/revision" element={<ProtectedRoute><SscRevisionPage /></ProtectedRoute>} />
+      <Route path="/ssc/practice" element={<ProtectedRoute><SscPracticePage /></ProtectedRoute>} />
+      <Route path="/ssc/mock-tests" element={<ProtectedRoute><SscMockTestsPage /></ProtectedRoute>} />
+      <Route path="/ssc/calendar" element={<ProtectedRoute><SscCalendarPage /></ProtectedRoute>} />
+      <Route path="/ssc/settings" element={<ProtectedRoute><SscSettingsPage /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
