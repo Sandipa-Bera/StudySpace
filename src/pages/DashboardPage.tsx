@@ -7,6 +7,7 @@ import { topicsService } from '../services/topics.service';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { LoadingState } from '../components/ui/LoadingState';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SscHomepageWidget } from '../components/ssc/SscHomepageWidget';
 import { getGreeting } from '../utils/greeting';
 import { calcProgress } from '../utils/progress';
 import { BookOpen, CheckCircle, Clock, Calendar } from 'lucide-react';
@@ -112,6 +113,8 @@ export function DashboardPage() {
           {displayName}, here's your study overview.
         </p>
       </div>
+      {/* ── SSC CGL Progress Widget ── */}
+      <SscHomepageWidget />
 
       {data.length === 0 ? (
         <EmptyState

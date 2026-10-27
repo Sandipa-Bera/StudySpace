@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useSscData } from '../../context/SscDataContext';
 import { sscSubjectsService } from '../../services/ssc/sscSubjects.service';
 import { sscChaptersService } from '../../services/ssc/sscChapters.service';
 import { sscProgressService } from '../../services/ssc/sscProgress.service';
@@ -9,6 +10,8 @@ import { sscStudyTasksService } from '../../services/ssc/sscStudyTasks.service';
 import { SscNav } from '../../components/ssc/SscNav';
 import { StatusBadge, StatChip } from '../../components/ssc/SscBadges';
 import { LoadingState } from '../../components/ui/LoadingState';
+import { SscTaskModal } from '../../components/ssc/SscTaskModal';
+import { ConfirmDialog } from '../../components/ssc/SscModal';
 import type {
   SscSubject,
   SscChapter,
@@ -29,6 +32,8 @@ import {
   Flame,
   Clock,
   TrendingUp,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { format, isToday, parseISO, isBefore } from 'date-fns';
 
@@ -36,6 +41,7 @@ export function SscDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { refresh: refreshContext } = useSscData();
 
   const [subjects, setSubjects] = useState<SscSubject[]>([]);
   const [chapters, setChapters] = useState<SscChapter[]>([]);
@@ -43,6 +49,11 @@ export function SscDashboardPage() {
   const [todayTasks, setTodayTasks] = useState<SscStudyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  // Task modal & delete confirmation states
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<SscStudyTask | null>(null);
+  const [deletingTask, setDeletingTask] = useState<SscStudyTask | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -69,36 +80,58 @@ export function SscDashboardPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleCompleteTask = async (taskId: string) => {
+  const handleToggleTask = async (task: SscStudyTask) => {
     if (!user) return;
     try {
-      await sscStudyTasksService.complete(taskId);
-      setTodayTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, is_completed: true } : t))
-      );
-      showToast('Task marked complete!', 'success');
+      if (task.is_completed) {
+        const updated = await sscStudyTasksService.uncomplete(task.id);
+        setTodayTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
+        showToast('Task marked incomplete', 'info');
+      } else {
+        const updated = await sscStudyTasksService.complete(task.id);
+        setTodayTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
+        showToast('Task marked complete!', 'success');
+      }
+      refreshContext();
     } catch {
       showToast('Failed to update task', 'error');
     }
   };
 
-  const handleAddTask = async () => {
-    if (!user) return;
-    const title = prompt('Task title:');
-    if (!title?.trim()) return;
+  const handleOpenAddTask = () => {
+    setTaskToEdit(null);
+    setTaskModalOpen(true);
+  };
+
+  const handleOpenEditTask = (task: SscStudyTask) => {
+    setTaskToEdit(task);
+    setTaskModalOpen(true);
+  };
+
+  const handleTaskSaved = (savedTask: SscStudyTask) => {
+    setTodayTasks((prev) => {
+      const idx = prev.findIndex((t) => t.id === savedTask.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = savedTask;
+        return next;
+      }
+      return [...prev, savedTask];
+    });
+    showToast(taskToEdit ? 'Task updated!' : 'Task created!', 'success');
+    refreshContext();
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deletingTask) return;
     try {
-      const task = await sscStudyTasksService.create(user.id, {
-        chapter_id: null,
-        task_type: 'custom',
-        title: title.trim(),
-        planned_date: new Date().toISOString().split('T')[0],
-        estimated_minutes: null,
-        reason: 'Added manually',
-      });
-      setTodayTasks((prev) => [...prev, task]);
-      showToast('Task added', 'success');
+      await sscStudyTasksService.delete(deletingTask.id);
+      setTodayTasks((prev) => prev.filter((t) => t.id !== deletingTask.id));
+      setDeletingTask(null);
+      showToast('Task deleted', 'success');
+      refreshContext();
     } catch {
-      showToast('Failed to add task', 'error');
+      showToast('Failed to delete task', 'error');
     }
   };
 
@@ -216,7 +249,7 @@ export function SscDashboardPage() {
                 <Flame size={16} style={{ color: 'var(--warning)' }} />
                 Today's Study Plan
               </h2>
-              <button className="btn btn-ghost ssc-btn-sm" onClick={handleAddTask}>
+              <button className="btn btn-primary ssc-btn-sm" onClick={handleOpenAddTask}>
                 <Plus size={14} /> Add task
               </button>
             </div>
@@ -238,7 +271,7 @@ export function SscDashboardPage() {
                       <Target size={13} /> Start a chapter
                     </button>
                   )}
-                  <button className="btn btn-ghost ssc-btn-sm" onClick={handleAddTask}>
+                  <button className="btn btn-ghost ssc-btn-sm" onClick={handleOpenAddTask}>
                     <Plus size={13} /> Add custom task
                   </button>
                 </div>
@@ -255,14 +288,19 @@ export function SscDashboardPage() {
                     >
                       <button
                         className={`ssc-task-check${task.is_completed ? ' done' : ''}`}
-                        onClick={() => !task.is_completed && handleCompleteTask(task.id)}
-                        aria-label={task.is_completed ? 'Completed' : 'Mark complete'}
-                        disabled={task.is_completed}
+                        onClick={() => handleToggleTask(task)}
+                        aria-label={task.is_completed ? 'Mark incomplete' : 'Mark complete'}
+                        title={task.is_completed ? 'Click to mark incomplete' : 'Click to mark complete'}
                       >
                         {task.is_completed ? <CheckCircle size={18} /> : <div className="ssc-task-circle" />}
                       </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: task.is_completed ? 'var(--text-muted)' : 'var(--text)' }}>
+                        <div style={{
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          color: task.is_completed ? 'var(--text-muted)' : 'var(--text)',
+                          textDecoration: task.is_completed ? 'line-through' : undefined,
+                        }}>
                           {task.title}
                         </div>
                         {(subject || chapter || task.reason) && (
@@ -282,6 +320,28 @@ export function SscDashboardPage() {
                         <span className={`ssc-badge ssc-task-type-badge ssc-type-${task.task_type}`}>
                           {task.task_type}
                         </span>
+
+                        {/* Task Edit & Delete Actions */}
+                        <div style={{ display: 'flex', gap: '0.25rem', marginLeft: '0.25rem' }}>
+                          <button
+                            className="btn btn-ghost ssc-btn-sm"
+                            style={{ padding: '0.25rem 0.4rem', height: 'auto' }}
+                            onClick={() => handleOpenEditTask(task)}
+                            title="Edit task"
+                            aria-label="Edit task"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            className="btn btn-ghost ssc-btn-sm"
+                            style={{ padding: '0.25rem 0.4rem', height: 'auto', color: 'var(--error)' }}
+                            onClick={() => setDeletingTask(task)}
+                            title="Delete task"
+                            aria-label="Delete task"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -290,7 +350,7 @@ export function SscDashboardPage() {
                   <span style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
                     {todayTasks.filter((t) => t.is_completed).length}/{todayTasks.length} done
                   </span>
-                  <button className="btn btn-ghost ssc-btn-sm" onClick={handleAddTask}>
+                  <button className="btn btn-ghost ssc-btn-sm" onClick={handleOpenAddTask}>
                     <Plus size={13} /> Add task
                   </button>
                 </div>
@@ -322,6 +382,30 @@ export function SscDashboardPage() {
           </section>
         </>
       )}
+
+      {/* Task Modal for Add/Edit */}
+      {user && (
+        <SscTaskModal
+          isOpen={taskModalOpen}
+          onClose={() => setTaskModalOpen(false)}
+          userId={user.id}
+          taskToEdit={taskToEdit}
+          subjects={subjects}
+          chapters={chapters}
+          onSaved={handleTaskSaved}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingTask)}
+        onCancel={() => setDeletingTask(null)}
+        onConfirm={confirmDeleteTask}
+        title="Delete Study Task"
+        message={`Are you sure you want to delete "${deletingTask?.title}"? This task will disappear from your schedule and task counts. (Your chapter study history and practice records will NOT be deleted.)`}
+        confirmLabel="Delete Task"
+        danger
+      />
     </div>
   );
 }

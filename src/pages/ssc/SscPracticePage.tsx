@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useSscData } from '../../context/SscDataContext';
 import { sscSubjectsService } from '../../services/ssc/sscSubjects.service';
 import { sscChaptersService } from '../../services/ssc/sscChapters.service';
 import { sscPracticeService } from '../../services/ssc/sscPractice.service';
@@ -9,6 +10,8 @@ import { sscProgressService } from '../../services/ssc/sscProgress.service';
 import { SscNav } from '../../components/ssc/SscNav';
 import { AccuracyBar } from '../../components/ssc/SscBadges';
 import { LoadingState } from '../../components/ui/LoadingState';
+import { SscPracticeModal } from '../../components/ssc/SscPracticeModal';
+import { ConfirmDialog } from '../../components/ssc/SscModal';
 import type {
   SscSubject,
   SscChapter,
@@ -16,13 +19,14 @@ import type {
   SscChapterProgress,
   PracticeSessionForm,
 } from '../../types/ssc.types';
-import { BarChart2, Plus, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart2, Plus, Trash2, Edit2, TrendingUp, TrendingDown } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
 
 export function SscPracticePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { refresh: refreshContext } = useSscData();
 
   const [subjects, setSubjects] = useState<SscSubject[]>([]);
   const [chapters, setChapters] = useState<SscChapter[]>([]);
@@ -32,6 +36,11 @@ export function SscPracticePage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [filterSubject, setFilterSubject] = useState('');
+
+  // Edit & Delete modal states
+  const [practiceToEdit, setPracticeToEdit] = useState<SscPracticeSession | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deletingSession, setDeletingSession] = useState<SscPracticeSession | null>(null);
 
   const [form, setForm] = useState<PracticeSessionForm>({
     chapter_id: '',
@@ -126,13 +135,32 @@ export function SscPracticePage() {
     } finally { setSaving(false); }
   };
 
-  const deleteSession = async (id: string) => {
-    if (!confirm('Delete this practice session?')) return;
+  const handleOpenEdit = (sess: SscPracticeSession) => {
+    setPracticeToEdit(sess);
+    setModalOpen(true);
+  };
+
+  const handlePracticeSaved = async (saved: SscPracticeSession) => {
+    if (!user) return;
+    await sscProgressService.recalcFromPractice(user.id, saved.chapter_id);
+    await load();
+    refreshContext();
+    showToast('Practice session updated!', 'success');
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!deletingSession || !user) return;
     try {
-      await sscPracticeService.delete(id);
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      showToast('Session deleted', 'success');
-    } catch { showToast('Failed to delete session', 'error'); }
+      await sscPracticeService.delete(deletingSession.id);
+      await sscProgressService.recalcFromPractice(user.id, deletingSession.chapter_id);
+      setSessions((prev) => prev.filter((s) => s.id !== deletingSession.id));
+      setDeletingSession(null);
+      await load();
+      refreshContext();
+      showToast('Practice session deleted', 'success');
+    } catch {
+      showToast('Failed to delete session', 'error');
+    }
   };
 
   if (loading) return <LoadingState message="Loading practice data…" />;
@@ -337,14 +365,26 @@ export function SscPracticePage() {
                       }}>
                         {acc}%
                       </span>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ padding: '0.25rem', minWidth: 'unset' }}
-                        onClick={() => deleteSession(sess.id)}
-                        aria-label="Delete session"
-                      >
-                        <Trash2 size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button
+                          className="btn btn-ghost ssc-btn-sm"
+                          style={{ padding: '0.2rem 0.4rem' }}
+                          onClick={() => handleOpenEdit(sess)}
+                          title="Edit session"
+                          aria-label="Edit session"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          className="btn btn-ghost ssc-btn-sm"
+                          style={{ padding: '0.2rem 0.4rem', color: 'var(--error)' }}
+                          onClick={() => setDeletingSession(sess)}
+                          title="Delete session"
+                          aria-label="Delete session"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -353,6 +393,30 @@ export function SscPracticePage() {
           </div>
         </>
       )}
+
+      {/* Practice Modal for Editing */}
+      {user && practiceToEdit && (
+        <SscPracticeModal
+          isOpen={modalOpen}
+          onClose={() => { setModalOpen(false); setPracticeToEdit(null); }}
+          userId={user.id}
+          chapterId={practiceToEdit.chapter_id}
+          subjectId={practiceToEdit.subject_id}
+          sessionToEdit={practiceToEdit}
+          onSaved={handlePracticeSaved}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingSession)}
+        onCancel={() => setDeletingSession(null)}
+        onConfirm={confirmDeleteSession}
+        title="Delete Practice Session"
+        message="Are you sure you want to delete this practice session? Your chapter accuracy and total attempted questions will be recalculated."
+        confirmLabel="Delete Session"
+        danger
+      />
     </div>
   );
 }

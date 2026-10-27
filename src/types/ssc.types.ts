@@ -21,9 +21,9 @@ export interface SscChapter {
   name: string;
   display_order: number;
   question_bank_count: number;
-  source_reference: string | null;
+  exam_tier: string | null;
+  exam_section: string | null;
   created_at: string;
-  updated_at: string;
 }
 
 // ─── User-progress entities ────────────────────────────────
@@ -40,7 +40,6 @@ export interface SscChapterProgress {
   personal_notes: string | null;
   questions_attempted: number;
   questions_correct: number;
-  time_spent_minutes: number;
   last_studied_at: string | null;
   last_revised_at: string | null;
   next_revision_at: string | null;

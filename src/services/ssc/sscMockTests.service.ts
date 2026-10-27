@@ -59,6 +59,30 @@ export const sscMockTestsService = {
     return data;
   },
 
+  async update(id: string, form: Partial<MockTestForm>): Promise<SscMockTest> {
+    const payload: Record<string, unknown> = {};
+    if (form.test_name !== undefined) payload.test_name = form.test_name;
+    if (form.test_date !== undefined) payload.test_date = form.test_date;
+    if (form.tier !== undefined) payload.tier = form.tier || null;
+    if (form.total_questions !== undefined) payload.total_questions = form.total_questions;
+    if (form.attempted !== undefined) payload.attempted = form.attempted;
+    if (form.correct !== undefined) payload.correct = form.correct;
+    if (form.incorrect !== undefined) payload.incorrect = form.incorrect;
+    if (form.score !== undefined) payload.score = form.score;
+    if (form.max_score !== undefined) payload.max_score = form.max_score;
+    if (form.duration_minutes !== undefined) payload.duration_minutes = form.duration_minutes;
+    if (form.notes !== undefined) payload.notes = form.notes || null;
+
+    const { data, error } = await supabase
+      .from('ssc_mock_tests')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('ssc_mock_tests')

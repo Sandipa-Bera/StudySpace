@@ -104,13 +104,17 @@ function AppRoutes() {
   );
 }
 
+import { SscDataProvider } from './context/SscDataContext';
+
 export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
-            <AppRoutes />
+            <SscDataProvider>
+              <AppRoutes />
+            </SscDataProvider>
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>

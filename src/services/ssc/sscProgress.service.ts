@@ -115,6 +115,47 @@ export const sscProgressService = {
     return this.upsert(userId, chapterId, { priority_override: priority });
   },
 
+  async resetProgress(
+    userId: string,
+    chapterId: string
+  ): Promise<SscChapterProgress> {
+    return this.upsert(userId, chapterId, {
+      status: 'not_started',
+      learning_done: false,
+      notes_prepared: false,
+      practice_done: false,
+      confidence_rating: null,
+      priority_override: null,
+      next_revision_at: null,
+    });
+  },
+
+  async deleteNotes(
+    userId: string,
+    chapterId: string
+  ): Promise<SscChapterProgress> {
+    return this.upsert(userId, chapterId, { personal_notes: null });
+  },
+
+  async clearNextRevision(
+    userId: string,
+    chapterId: string
+  ): Promise<SscChapterProgress> {
+    return this.upsert(userId, chapterId, { next_revision_at: null });
+  },
+
+  async deleteProgress(
+    userId: string,
+    chapterId: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('ssc_chapter_progress')
+      .delete()
+      .eq('user_id', userId)
+      .eq('chapter_id', chapterId);
+    if (error) throw error;
+  },
+
   // ── Aggregate practice stats into progress ──────────────
 
   async recalcFromPractice(
