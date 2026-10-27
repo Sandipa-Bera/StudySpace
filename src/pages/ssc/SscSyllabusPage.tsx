@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useSscData } from '../../context/SscDataContext';
 import { sscSubjectsService } from '../../services/ssc/sscSubjects.service';
 import { sscChaptersService } from '../../services/ssc/sscChapters.service';
 import { sscProgressService } from '../../services/ssc/sscProgress.service';
@@ -23,20 +24,35 @@ type ViewMode = 'table' | 'card' | 'compact';
 export function SscSyllabusPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { refresh: refreshContext } = useSscData();
 
   const [subjects, setSubjects] = useState<SscSubject[]>([]);
   const [chapters, setChapters] = useState<SscChapter[]>([]);
   const [progress, setProgress] = useState<SscChapterProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const initialStatus = searchParams.get('status') as ChapterStatus | null;
+
   const [search, setSearch] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
-  const [filterStatus, setFilterStatus] = useState<ChapterStatus | ''>('');
+  const [filterStatus, setFilterStatus] = useState<ChapterStatus | ''>(
+    initialStatus && ['not_started', 'in_progress', 'completed', 'revise'].includes(initialStatus)
+      ? initialStatus
+      : ''
+  );
   const [filterWeak, setFilterWeak] = useState(false);
   const [filterOverdue, setFilterOverdue] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [viewMode, setViewMode] = useState<ViewMode>('card');
+
+  useEffect(() => {
+    const s = searchParams.get('status') as ChapterStatus | null;
+    if (s && ['not_started', 'in_progress', 'completed', 'revise'].includes(s)) {
+      setFilterStatus(s);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;

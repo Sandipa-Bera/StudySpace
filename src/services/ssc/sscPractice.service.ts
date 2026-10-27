@@ -70,6 +70,24 @@ export const sscPracticeService = {
     return data;
   },
 
+  async update(
+    id: string,
+    form: Partial<PracticeSessionForm>
+  ): Promise<SscPracticeSession> {
+    if (form.attempted !== undefined && (form.attempted < 0 || (form.correct ?? 0) < 0 || (form.incorrect ?? 0) < 0 || (form.skipped ?? 0) < 0)) {
+      throw new Error('Question counts cannot be negative.');
+    }
+    const { data, error } = await supabase
+      .from('ssc_practice_sessions')
+      .update(form)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('ssc_practice_sessions')

@@ -95,4 +95,15 @@ export const sscStudyTasksService = {
     if (error) throw error;
     return data;
   },
+
+  async update(id: string, updates: Partial<StudyTaskForm>): Promise<SscStudyTask> {
+    const { data, error } = await supabase
+      .from('ssc_study_tasks')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 };

@@ -5950,3 +5950,174 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 480px) {
   .ssc-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── SSC Modals & Dialogs ────────────────────────────────── */
+.ssc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease;
+}
+
+.ssc-modal {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  animation: scaleUp 0.18s ease;
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.ssc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ssc-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+.ssc-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.ssc-modal-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.ssc-modal-body {
+  padding: 1.25rem;
+}
+
+.btn-danger {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+}
+
+.btn-danger:hover {
+  background: #b91c1c !important;
+}
+
+/* ── SSC Homepage Widget ─────────────────────────────────── */
+.ssc-widget {
+  margin-bottom: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: var(--card-bg, #ffffff);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.ssc-widget-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--secondary, #3b82f6) 100%);
+}
+
+.ssc-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.ssc-widget-counts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.15rem;
+}
+
+.ssc-widget-count-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.4rem;
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ssc-widget-count-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--card-bg);
+}
+
+.ssc-widget-tasks {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
+.ssc-widget-skeleton {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ssc-widget-skeleton-bar {
+  height: 16px;
+  border-radius: 4px;
+  background: var(--border);
+  opacity: 0.5;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+@media (max-width: 500px) {
+  .ssc-widget-counts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+

@@ -1,13 +1,16 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useSscData } from '../../context/SscDataContext';
 import { sscStudyTasksService } from '../../services/ssc/sscStudyTasks.service';
 import { sscChaptersService } from '../../services/ssc/sscChapters.service';
 import { sscSubjectsService } from '../../services/ssc/sscSubjects.service';
 import { SscNav } from '../../components/ssc/SscNav';
 import { LoadingState } from '../../components/ui/LoadingState';
+import { SscTaskModal } from '../../components/ssc/SscTaskModal';
+import { ConfirmDialog } from '../../components/ssc/SscModal';
 import type { SscStudyTask, SscChapter, SscSubject } from '../../types/ssc.types';
-import { Calendar, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, CheckCircle, Plus, Edit2, Trash2 } from 'lucide-react';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   isToday, isSameDay, parseISO, addMonths, subMonths,
@@ -16,32 +19,42 @@ import {
 export function SscCalendarPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { refresh: refreshContext } = useSscData();
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [tasks, setTasks] = useState<SscStudyTask[]>([]);
   const [chapters, setChapters] = useState<SscChapter[]>([]);
   const [subjects, setSubjects] = useState<SscSubject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
 
-  useEffect(() => {
+  // Task modal & delete confirmation
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<SscStudyTask | null>(null);
+  const [deletingTask, setDeletingTask] = useState<SscStudyTask | null>(null);
+
+  const loadTasks = useCallback(async () => {
     if (!user) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const start = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
-        const end   = format(endOfMonth(currentMonth),   'yyyy-MM-dd');
-        const [t, chs, subs] = await Promise.all([
-          sscStudyTasksService.getRange(user.id, start, end),
-          sscChaptersService.getAll(),
-          sscSubjectsService.getAll(),
-        ]);
-        setTasks(t);
-        setChapters(chs);
-        setSubjects(subs);
-      } catch { showToast('Failed to load calendar', 'error'); }
-      finally { setLoading(false); }
-    })();
+    setLoading(true);
+    try {
+      const start = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+      const end   = format(endOfMonth(currentMonth),   'yyyy-MM-dd');
+      const [t, chs, subs] = await Promise.all([
+        sscStudyTasksService.getRange(user.id, start, end),
+        sscChaptersService.getAll(),
+        sscSubjectsService.getAll(),
+      ]);
+      setTasks(t);
+      setChapters(chs);
+      setSubjects(subs);
+    } catch {
+      showToast('Failed to load calendar', 'error');
+    } finally {
+      setLoading(false);
+    }
   }, [user, currentMonth]);
+
+  useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const chapterMap = useMemo(() => new Map(chapters.map((c) => [c.id, c])), [chapters]);
   const subjectMap = useMemo(() => new Map(subjects.map((s) => [s.id, s])), [subjects]);
@@ -63,12 +76,59 @@ export function SscCalendarPage() {
     ? (tasksByDate[format(selectedDay, 'yyyy-MM-dd')] ?? [])
     : [];
 
-  const handleComplete = async (taskId: string) => {
+  const handleToggleComplete = async (task: SscStudyTask) => {
     if (!user) return;
     try {
-      await sscStudyTasksService.complete(taskId);
-      setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, is_completed: true } : t));
-    } catch { showToast('Failed to update task', 'error'); }
+      if (task.is_completed) {
+        const updated = await sscStudyTasksService.uncomplete(task.id);
+        setTasks((prev) => prev.map((t) => t.id === task.id ? updated : t));
+        showToast('Task marked incomplete', 'info');
+      } else {
+        const updated = await sscStudyTasksService.complete(task.id);
+        setTasks((prev) => prev.map((t) => t.id === task.id ? updated : t));
+        showToast('Task marked complete!', 'success');
+      }
+      refreshContext();
+    } catch {
+      showToast('Failed to update task', 'error');
+    }
+  };
+
+  const handleOpenAddTask = () => {
+    setTaskToEdit(null);
+    setTaskModalOpen(true);
+  };
+
+  const handleOpenEditTask = (task: SscStudyTask) => {
+    setTaskToEdit(task);
+    setTaskModalOpen(true);
+  };
+
+  const handleTaskSaved = (savedTask: SscStudyTask) => {
+    setTasks((prev) => {
+      const idx = prev.findIndex((t) => t.id === savedTask.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = savedTask;
+        return next;
+      }
+      return [...prev, savedTask];
+    });
+    showToast(taskToEdit ? 'Task updated!' : 'Task scheduled!', 'success');
+    refreshContext();
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deletingTask) return;
+    try {
+      await sscStudyTasksService.delete(deletingTask.id);
+      setTasks((prev) => prev.filter((t) => t.id !== deletingTask.id));
+      setDeletingTask(null);
+      showToast('Task deleted', 'success');
+      refreshContext();
+    } catch {
+      showToast('Failed to delete task', 'error');
+    }
   };
 
   if (loading) return <LoadingState message="Loading calendar…" />;
@@ -83,13 +143,18 @@ export function SscCalendarPage() {
             <p className="page-subtitle">{format(currentMonth, 'MMMM yyyy')}</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.375rem' }}>
+        <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
           <button className="btn btn-ghost ssc-btn-sm" onClick={() => setCurrentMonth((m) => subMonths(m, 1))}>
             <ChevronLeft size={14} />
           </button>
-          <button className="btn btn-ghost ssc-btn-sm" onClick={() => setCurrentMonth(new Date())}>Today</button>
+          <button className="btn btn-ghost ssc-btn-sm" onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()); }}>
+            Today
+          </button>
           <button className="btn btn-ghost ssc-btn-sm" onClick={() => setCurrentMonth((m) => addMonths(m, 1))}>
             <ChevronRight size={14} />
+          </button>
+          <button className="btn btn-primary ssc-btn-sm" onClick={handleOpenAddTask} style={{ marginLeft: '0.5rem' }}>
+            <Plus size={14} /> Schedule Task
           </button>
         </div>
       </div>
@@ -112,7 +177,6 @@ export function SscCalendarPage() {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayTasks = tasksByDate[dateStr] ?? [];
           const isSelected = selectedDay && isSameDay(day, selectedDay);
-          const completedCount = dayTasks.filter((t) => t.is_completed).length;
 
           return (
             <button
@@ -123,7 +187,7 @@ export function SscCalendarPage() {
                 isSelected ? 'selected' : '',
                 dayTasks.length > 0 ? 'has-tasks' : '',
               ].join(' ')}
-              onClick={() => setSelectedDay(isSameDay(day, selectedDay ?? new Date(0)) ? null : day)}
+              onClick={() => setSelectedDay(day)}
             >
               <span className="ssc-cal-day-num">{format(day, 'd')}</span>
               {dayTasks.length > 0 && (
@@ -147,11 +211,19 @@ export function SscCalendarPage() {
       {/* Selected day task list */}
       {selectedDay && (
         <div className="card" style={{ marginTop: '1.25rem' }}>
-          <h3 className="ssc-card-title">
-            {format(selectedDay, 'EEEE, d MMMM')} — {selectedDayTasks.length} task{selectedDayTasks.length !== 1 ? 's' : ''}
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 className="ssc-card-title" style={{ margin: 0 }}>
+              {format(selectedDay, 'EEEE, d MMMM yyyy')} — {selectedDayTasks.length} task{selectedDayTasks.length !== 1 ? 's' : ''}
+            </h3>
+            <button className="btn btn-primary ssc-btn-sm" onClick={handleOpenAddTask}>
+              <Plus size={13} /> Add Task for this day
+            </button>
+          </div>
+
           {selectedDayTasks.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>No tasks planned for this day.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>
+              No tasks planned for this day. Click "+ Add Task for this day" to plan a session.
+            </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {selectedDayTasks.map((task) => {
@@ -161,20 +233,54 @@ export function SscCalendarPage() {
                   <div key={task.id} className={`ssc-task-item${task.is_completed ? ' completed' : ''}`}>
                     <button
                       className={`ssc-task-check${task.is_completed ? ' done' : ''}`}
-                      onClick={() => !task.is_completed && handleComplete(task.id)}
-                      disabled={task.is_completed}
+                      onClick={() => handleToggleComplete(task)}
+                      title={task.is_completed ? 'Click to mark incomplete' : 'Click to mark complete'}
                     >
                       {task.is_completed ? <CheckCircle size={16} /> : <div className="ssc-task-circle" />}
                     </button>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{task.title}</div>
-                      {(subject || chapter) && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {subject?.name}{chapter && ` · ${chapter.name}`}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        textDecoration: task.is_completed ? 'line-through' : undefined,
+                        color: task.is_completed ? 'var(--text-muted)' : 'var(--text)',
+                      }}>
+                        {task.title}
+                      </div>
+                      {(subject || chapter || task.reason) && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                          {subject?.name}{chapter && ` · ${chapter.name}`}{task.reason && ` · ${task.reason}`}
                         </div>
                       )}
                     </div>
-                    <span className={`ssc-badge ssc-type-${task.task_type}`}>{task.task_type}</span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                      {task.estimated_minutes && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {task.estimated_minutes}m
+                        </span>
+                      )}
+                      <span className={`ssc-badge ssc-type-${task.task_type}`}>{task.task_type}</span>
+
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button
+                          className="btn btn-ghost ssc-btn-sm"
+                          style={{ padding: '0.2rem 0.4rem' }}
+                          onClick={() => handleOpenEditTask(task)}
+                          title="Edit task"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          className="btn btn-ghost ssc-btn-sm"
+                          style={{ padding: '0.2rem 0.4rem', color: 'var(--error)' }}
+                          onClick={() => setDeletingTask(task)}
+                          title="Delete task"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -182,6 +288,31 @@ export function SscCalendarPage() {
           )}
         </div>
       )}
+
+      {/* Task Modal */}
+      {user && (
+        <SscTaskModal
+          isOpen={taskModalOpen}
+          onClose={() => setTaskModalOpen(false)}
+          userId={user.id}
+          taskToEdit={taskToEdit}
+          defaultDate={selectedDay ? format(selectedDay, 'yyyy-MM-dd') : undefined}
+          subjects={subjects}
+          chapters={chapters}
+          onSaved={handleTaskSaved}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingTask)}
+        onCancel={() => setDeletingTask(null)}
+        onConfirm={confirmDeleteTask}
+        title="Delete Study Task"
+        message={`Are you sure you want to delete "${deletingTask?.title}" from your calendar? (Your chapter progress and practice records are unaffected.)`}
+        confirmLabel="Delete Task"
+        danger
+      />
     </div>
   );
 }

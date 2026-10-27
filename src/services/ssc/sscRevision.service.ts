@@ -58,6 +58,22 @@ export const sscRevisionService = {
     return data;
   },
 
+  async update(
+    id: string,
+    form: Partial<RevisionSessionForm>
+  ): Promise<SscRevisionSession> {
+    const { data, error } = await supabase
+      .from('ssc_revision_sessions')
+      .update({
+        ...form,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async delete(id: string): Promise<void> {
     const { error } = await supabase
       .from('ssc_revision_sessions')
