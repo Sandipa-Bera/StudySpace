@@ -184,7 +184,12 @@ export function SscPracticePage() {
       {/* ── Log session form ── */}
       {showForm && (
         <div className="card ssc-form-card" style={{ marginBottom: '1.5rem' }}>
-          <h3 className="ssc-card-title">New Practice Session</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h3 className="ssc-card-title" style={{ margin: 0 }}>New Practice Session</h3>
+            <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={() => setShowForm(false)}>
+              Cancel
+            </button>
+          </div>
           <form onSubmit={submitPractice} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="ssc-form-row-2">
               <div>

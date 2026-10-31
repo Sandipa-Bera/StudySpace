@@ -94,6 +94,17 @@ Try a prompt to get started:"
           style={{ minHeight: '400px', fontFamily: 'Inter, sans-serif' }}
         />
 
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            <Save size={14} />
+            {saving ? 'Saving…' : 'Save Scratchpad'}
+          </button>
+        </div>
+
         <div style={{ marginTop: '1.5rem' }}>
           <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.75rem' }}>
             Writing Prompts

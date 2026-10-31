@@ -518,13 +518,35 @@ export function SscChapterDetailPage() {
               )}
             </div>
             {editingNotes ? (
-              <textarea
-                className="ssc-input ssc-notes-area"
-                value={notesText}
-                onChange={(e) => setNotesText(e.target.value)}
-                rows={8}
-                placeholder="Add formulas, tricks, mistakes to avoid…"
-              />
+              <>
+                <textarea
+                  className="ssc-input ssc-notes-area"
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  rows={8}
+                  placeholder="Add formulas, tricks, mistakes to avoid…"
+                />
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost ssc-btn-sm"
+                    onClick={() => {
+                      setEditingNotes(false);
+                      setNotesText(progress?.personal_notes ?? '');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary ssc-btn-sm"
+                    onClick={saveNotes}
+                    disabled={saving}
+                  >
+                    <Save size={13} /> {saving ? 'Saving…' : 'Save Notes'}
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="ssc-notes-display">
                 {progress?.personal_notes

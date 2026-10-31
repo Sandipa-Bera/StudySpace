@@ -446,12 +446,12 @@ export function SscRevisionPage() {
             <div className="ssc-modal-header">
               <h2 className="ssc-modal-title">Reschedule Revision</h2>
             </div>
-            <div className="ssc-modal-body">
-              <form onSubmit={handleRescheduleSubmit}>
+            <form id="reschedule-form" onSubmit={handleRescheduleSubmit}>
+              <div className="ssc-modal-body">
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                   Pick a new date for {chapterMap.get(reschedulingChapter.chapter_id)?.name}:
                 </p>
-                <div style={{ marginBottom: '1.25rem' }}>
+                <div>
                   <label className="ssc-label">New Revision Date</label>
                   <input
                     type="date"
@@ -465,16 +465,16 @@ export function SscRevisionPage() {
                     }
                   />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={() => setReschedulingChapter(null)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary ssc-btn-sm">
-                    Save Schedule
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div className="ssc-modal-footer">
+                <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={() => setReschedulingChapter(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary ssc-btn-sm">
+                  Save Schedule
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
