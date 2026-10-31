@@ -360,15 +360,15 @@ export function JournalPage() {
     const isEdit = pageView === 'edit';
     return (
       <div className="journal-editor">
-        {/* Header */}
-        <div className="journal-detail-nav">
-          <button className="btn btn-ghost btn-sm" onClick={goBack}>
-            ← Back
+        {/* Sticky Header with Save & Cancel for easy mobile reach */}
+        <div className="journal-editor-topbar">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={goBack}>
+            ← Cancel
           </button>
           <h1
             style={{
               fontFamily: 'Lora, serif',
-              fontSize: '1.25rem',
+              fontSize: '1.15rem',
               fontWeight: 600,
               color: 'var(--primary)',
               margin: 0,
@@ -376,6 +376,14 @@ export function JournalPage() {
           >
             {isEdit ? 'Edit Entry' : 'New Entry'}
           </h1>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={handleSave}
+            disabled={saving || (!form.content.trim() && !form.mood)}
+          >
+            {saving ? 'Saving…' : isEdit ? 'Update' : 'Save'}
+          </button>
         </div>
 
         {/* Date */}
@@ -431,7 +439,7 @@ export function JournalPage() {
         </div>
 
         {/* Photo attachment */}
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <div className="journal-section-label">
             📷 Add a photo
           </div>
@@ -470,12 +478,13 @@ export function JournalPage() {
           )}
         </div>
 
-        {/* Save */}
+        {/* Bottom Save & Cancel */}
         <div className="journal-save-area">
-          <button className="btn btn-ghost" onClick={goBack}>
+          <button type="button" className="btn btn-ghost" onClick={goBack}>
             Cancel
           </button>
           <button
+            type="button"
             className="btn-save-entry"
             onClick={handleSave}
             disabled={saving || (!form.content.trim() && !form.mood)}

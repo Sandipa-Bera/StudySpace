@@ -135,8 +135,23 @@ export function SscMockTestModal({
       onClose={onClose}
       title={testToEdit ? 'Edit Mock Test' : 'Record Mock Test'}
       width={540}
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="mock-test-form"
+            className="btn btn-primary ssc-btn-sm"
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : testToEdit ? 'Save Changes' : 'Record Test'}
+          </button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+      <form id="mock-test-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         {error && (
           <div className="ssc-alert ssc-alert-warn" style={{ marginBottom: '0.25rem' }}>
             {error}
@@ -286,15 +301,6 @@ export function SscMockTestModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary ssc-btn-sm" disabled={saving}>
-            {saving ? 'Saving…' : testToEdit ? 'Save Changes' : 'Record Test'}
-          </button>
         </div>
       </form>
     </Modal>

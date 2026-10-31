@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   title: string;
@@ -24,7 +25,18 @@ export function Modal({ title, onClose, children }: ModalProps) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="modal">
-        <h2 className="modal-title">{title}</h2>
+        <div className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
         {children}
       </div>
     </div>

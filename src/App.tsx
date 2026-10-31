@@ -30,6 +30,7 @@ import { SscPracticePage } from './pages/ssc/SscPracticePage';
 import { SscMockTestsPage } from './pages/ssc/SscMockTestsPage';
 import { SscCalendarPage } from './pages/ssc/SscCalendarPage';
 import { SscSettingsPage } from './pages/ssc/SscSettingsPage';
+import { SscDataProvider } from './context/SscDataContext';
 
 
 // ─── Protected Route ───────────────────────────────────────
@@ -104,20 +105,18 @@ function AppRoutes() {
   );
 }
 
-import { SscDataProvider } from './context/SscDataContext';
-
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
           <ToastProvider>
             <SscDataProvider>
               <AppRoutes />
             </SscDataProvider>
           </ToastProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

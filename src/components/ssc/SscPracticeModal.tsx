@@ -109,8 +109,23 @@ export function SscPracticeModal({
       onClose={onClose}
       title={sessionToEdit ? 'Edit Practice Session' : 'Log Practice Session'}
       width={500}
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="practice-session-form"
+            className="btn btn-primary ssc-btn-sm"
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : sessionToEdit ? 'Save Changes' : 'Log Session'}
+          </button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+      <form id="practice-session-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         {error && (
           <div className="ssc-alert ssc-alert-warn" style={{ marginBottom: '0.25rem' }}>
             {error}
@@ -204,15 +219,6 @@ export function SscPracticeModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary ssc-btn-sm" disabled={saving}>
-            {saving ? 'Saving…' : sessionToEdit ? 'Save Changes' : 'Log Session'}
-          </button>
         </div>
       </form>
     </Modal>

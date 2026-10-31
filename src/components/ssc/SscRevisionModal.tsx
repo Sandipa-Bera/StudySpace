@@ -103,8 +103,23 @@ export function SscRevisionModal({
       onClose={onClose}
       title={revisionToEdit ? 'Edit Revision Record' : 'Record Revision Session'}
       width={480}
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="revision-session-form"
+            className="btn btn-primary ssc-btn-sm"
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : revisionToEdit ? 'Save Changes' : 'Record Revision'}
+          </button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+      <form id="revision-session-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         {error && (
           <div className="ssc-alert ssc-alert-warn" style={{ marginBottom: '0.25rem' }}>
             {error}
@@ -178,15 +193,6 @@ export function SscRevisionModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary ssc-btn-sm" disabled={saving}>
-            {saving ? 'Saving…' : revisionToEdit ? 'Save Changes' : 'Record Revision'}
-          </button>
         </div>
       </form>
     </Modal>

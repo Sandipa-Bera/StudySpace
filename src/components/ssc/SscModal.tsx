@@ -6,10 +6,11 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   width?: number;
 }
 
-export function Modal({ isOpen, onClose, title, children, width = 520 }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, width = 520 }: ModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function Modal({ isOpen, onClose, title, children, width = 520 }: ModalPr
           </button>
         </div>
         <div className="ssc-modal-body">{children}</div>
+        {footer && <div className="ssc-modal-footer">{footer}</div>}
       </div>
     </div>
   );
@@ -75,20 +77,20 @@ export function ConfirmDialog({
           <h2 className="ssc-modal-title">{title}</h2>
         </div>
         <div className="ssc-modal-body">
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
             {message}
           </p>
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-            <button className="btn btn-ghost ssc-btn-sm" onClick={onCancel}>
-              Cancel
-            </button>
-            <button
-              className={`btn ssc-btn-sm ${danger ? 'btn-danger' : 'btn-primary'}`}
-              onClick={onConfirm}
-            >
-              {confirmLabel}
-            </button>
-          </div>
+        </div>
+        <div className="ssc-modal-footer">
+          <button className="btn btn-ghost ssc-btn-sm" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className={`btn ssc-btn-sm ${danger ? 'btn-danger' : 'btn-primary'}`}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
         </div>
       </div>
     </div>

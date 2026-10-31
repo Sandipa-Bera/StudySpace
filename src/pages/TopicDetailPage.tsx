@@ -390,13 +390,28 @@ export function TopicDetailPage() {
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>
             </div>
           ) : (
-            <textarea
-              className="form-textarea"
-              value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              placeholder="Add your notes here…"
-              style={{ minHeight: 200, fontFamily: 'Inter, sans-serif' }}
-            />
+            <>
+              <textarea
+                className="form-textarea"
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="Add your notes here…"
+                style={{ minHeight: 200, fontFamily: 'Inter, sans-serif' }}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSaveNote}
+                  disabled={saving || !noteContent.trim()}
+                >
+                  {saving ? 'Saving…' : 'Save Notes'}
+                </button>
+              </div>
+            </>
           )
         ) : note ? (
           <div style={{ padding: '1rem', background: 'var(--sand)', borderRadius: '8px', minHeight: 120 }}>

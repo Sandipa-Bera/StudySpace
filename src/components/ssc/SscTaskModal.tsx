@@ -124,8 +124,23 @@ export function SscTaskModal({
       onClose={onClose}
       title={taskToEdit ? 'Edit Study Task' : 'Add Study Task'}
       width={520}
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="study-task-form"
+            className="btn btn-primary ssc-btn-sm"
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : taskToEdit ? 'Save Changes' : 'Create Task'}
+          </button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <form id="study-task-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {error && (
           <div className="ssc-alert ssc-alert-warn" style={{ marginBottom: '0.25rem' }}>
             {error}
@@ -245,15 +260,6 @@ export function SscTaskModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-ghost ssc-btn-sm" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary ssc-btn-sm" disabled={saving}>
-            {saving ? 'Saving…' : taskToEdit ? 'Save Changes' : 'Create Task'}
-          </button>
         </div>
       </form>
     </Modal>
