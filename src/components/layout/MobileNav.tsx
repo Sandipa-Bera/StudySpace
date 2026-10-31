@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: LayoutDashboard },
   { to: '/subjects', label: 'Subjects', icon: BookOpen },
   { to: '/ssc', label: 'SSC CGL', icon: Trophy },
-  { to: '/pomodoro', label: 'Pomodoro', icon: Timer },
+  { to: '/pomodoro', label: 'Focus', icon: Timer },
   { to: '/journal', label: 'Journal', icon: BookMarked },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
